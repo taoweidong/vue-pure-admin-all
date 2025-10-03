@@ -9,6 +9,7 @@ from contextlib import asynccontextmanager
 from loguru import logger
 from app.config import settings
 from app.presentation.api import auth, system, monitor, list
+from app.presentation.api.v1 import api_v1
 from app.infrastructure.database.database import engine, Base
 from app.infrastructure.utils.logger import log_startup, log_shutdown
 import uvicorn
@@ -69,6 +70,7 @@ def create_app() -> FastAPI:
     )
 
     # 注册路由
+    app.include_router(api_v1, tags=["API v1"])
     app.include_router(auth.router, tags=["认证"])
     app.include_router(system.router, tags=["系统管理"])
     app.include_router(monitor.router, tags=["系统监控"])

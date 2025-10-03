@@ -119,3 +119,53 @@ class PageResponse(BaseModel):
 class TableResponse(BaseResponse):
     """表格响应"""
     data: Optional[PageResponse] = None
+
+
+class UserInList(BaseModel):
+    """用户列表项"""
+    id: int
+    username: str
+    nickname: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    sex: int
+    status: int
+    dept: Optional[dict] = None
+    remark: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserDetail(BaseModel):
+    """用户详情"""
+    id: int
+    username: str
+    nickname: str
+    email: Optional[str] = None
+    phone: Optional[str] = None
+    avatar: Optional[str] = None
+    description: Optional[str] = None
+    sex: int
+    status: int
+    dept: Optional[dict] = None
+    roles: List[dict] = []
+    remark: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+class UserStatusUpdate(BaseModel):
+    """用户状态更新"""
+    status: int
+
+
+class PasswordResetRequest(BaseModel):
+    """密码重置请求"""
+    password: str

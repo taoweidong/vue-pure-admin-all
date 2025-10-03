@@ -1,20 +1,21 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+
+from app.application.services.system_service import SystemService
+from app.application.services.user_service import UserService
 from app.infrastructure.database.database import get_db
 from app.presentation.api.auth import get_current_user
-from app.presentation.schemas.user import *
 from app.presentation.schemas.system import *
-from app.application.services.user_service import UserService
-from app.application.services.system_service import SystemService
+from app.presentation.schemas.user import *
 
 router = APIRouter()
 
 
 @router.post("/user", response_model=TableResponse)
 async def get_user_list(
-    request: UserListRequest,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: UserListRequest,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取用户列表"""
     try:
@@ -27,7 +28,7 @@ async def get_user_list(
             page=request.currentPage or 1,
             page_size=request.pageSize or 10
         )
-        
+
         # 转换为前端需要的格式
         user_list = []
         for user in users:
@@ -37,7 +38,7 @@ async def get_user_list(
                     "id": user.dept.id,
                     "name": user.dept.name
                 }
-            
+
             user_list.append({
                 "id": user.id,
                 "username": user.username,
@@ -51,7 +52,7 @@ async def get_user_list(
                 "remark": user.remark,
                 "createTime": int(user.created_at.timestamp() * 1000) if user.created_at else None
             })
-        
+
         return TableResponse(
             success=True,
             data=PageResponse(
@@ -67,21 +68,21 @@ async def get_user_list(
 
 @router.get("/list-all-role")
 async def get_all_roles(
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取所有角色列表"""
     try:
         system_service = SystemService(db)
         roles = system_service.get_all_roles()
-        
+
         role_list = []
         for role in roles:
             role_list.append({
                 "id": role.id,
                 "name": role.name
             })
-        
+
         return {
             "success": True,
             "data": role_list
@@ -92,19 +93,19 @@ async def get_all_roles(
 
 @router.post("/list-role-ids")
 async def get_user_role_ids(
-    request: dict,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: dict,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """根据用户ID获取角色ID列表"""
     try:
         user_id = request.get("userId")
         if not user_id:
             raise HTTPException(status_code=400, detail="userId is required")
-        
+
         system_service = SystemService(db)
         role_ids = system_service.get_user_role_ids(user_id)
-        
+
         return {
             "success": True,
             "data": role_ids
@@ -115,9 +116,9 @@ async def get_user_role_ids(
 
 @router.post("/role", response_model=TableResponse)
 async def get_role_list(
-    request: RoleListRequest,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: RoleListRequest,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取角色列表"""
     try:
@@ -129,7 +130,7 @@ async def get_role_list(
             page=request.currentPage or 1,
             page_size=request.pageSize or 10
         )
-        
+
         role_list = []
         for role in roles:
             role_list.append({
@@ -141,7 +142,7 @@ async def get_role_list(
                 "createTime": int(role.created_at.timestamp() * 1000) if role.created_at else None,
                 "updateTime": int(role.updated_at.timestamp() * 1000) if role.updated_at else None
             })
-        
+
         return TableResponse(
             success=True,
             data=PageResponse(
@@ -157,15 +158,15 @@ async def get_role_list(
 
 @router.post("/menu")
 async def get_menu_list(
-    request: dict,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: dict,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取菜单列表"""
     try:
         system_service = SystemService(db)
         menus = system_service.get_menu_list()
-        
+
         menu_list = []
         for menu in menus:
             menu_list.append({
@@ -192,7 +193,7 @@ async def get_menu_list(
                 "showLink": menu.show_link,
                 "showParent": menu.show_parent
             })
-        
+
         return {
             "success": True,
             "data": menu_list
@@ -203,15 +204,15 @@ async def get_menu_list(
 
 @router.post("/dept")
 async def get_dept_list(
-    request: dict,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: dict,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取部门列表"""
     try:
         system_service = SystemService(db)
         depts = system_service.get_dept_list()
-        
+
         dept_list = []
         for dept in depts:
             dept_list.append({
@@ -225,7 +226,7 @@ async def get_dept_list(
                 "status": dept.status,
                 "sort": dept.sort
             })
-        
+
         return {
             "success": True,
             "data": dept_list
@@ -236,15 +237,15 @@ async def get_dept_list(
 
 @router.post("/role-menu")
 async def get_role_menu(
-    request: dict,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: dict,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """获取角色菜单权限"""
     try:
         system_service = SystemService(db)
         menus = system_service.get_menu_list()
-        
+
         menu_list = []
         for menu in menus:
             menu_list.append({
@@ -253,7 +254,7 @@ async def get_role_menu(
                 "menuType": menu.menu_type,
                 "title": menu.title
             })
-        
+
         return {
             "success": True,
             "data": menu_list
@@ -264,19 +265,19 @@ async def get_role_menu(
 
 @router.post("/role-menu-ids")
 async def get_role_menu_ids(
-    request: dict,
-    current_user = Depends(get_current_user),
-    db: Session = Depends(get_db)
+        request: dict,
+        current_user=Depends(get_current_user),
+        db: Session = Depends(get_db)
 ):
     """根据角色ID获取菜单ID列表"""
     try:
         role_id = request.get("id")
         if not role_id:
             raise HTTPException(status_code=400, detail="id is required")
-        
+
         system_service = SystemService(db)
         menu_ids = system_service.get_role_menu_ids(role_id)
-        
+
         return {
             "success": True,
             "data": menu_ids
