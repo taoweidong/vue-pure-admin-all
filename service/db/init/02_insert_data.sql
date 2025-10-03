@@ -10,8 +10,8 @@ INSERT OR IGNORE INTO roles (id, name, code, status, remark) VALUES
 
 -- 插入用户数据（密码：admin123 和 common123 的bcrypt哈希）
 INSERT OR IGNORE INTO users (id, username, nickname, email, phone, avatar, password_hash, description, sex, status, dept_id, remark) VALUES
-(1, 'admin', '小铭', 'admin@example.com', '15888886789', 'https://avatars.githubusercontent.com/u/44761321', '$2b$12$9jKr.Vk5XJ5I5J5J5J5J5OqCJ5J5J5J5J5J5J5J5J5J5J5J5J5J5J', '系统管理员', 1, 1, 103, '管理员账户'),
-(2, 'common', '小林', 'common@example.com', '18288882345', 'https://avatars.githubusercontent.com/u/52823142', '$2b$12$9jKr.Vk5XJ5I5J5J5J5J5OqCJ5J5J5J5J5J5J5J5J5J5J5J5J5J5J', '普通用户', 2, 1, 105, '普通用户账户');
+(1, 'admin', '小铭', 'admin@example.com', '15888886789', 'https://avatars.githubusercontent.com/u/44761321', 'temp_hash_admin', '系统管理员', 1, 1, 103, '管理员账户'),
+(2, 'common', '小林', 'common@example.com', '18288882345', 'https://avatars.githubusercontent.com/u/52823142', 'temp_hash_common', '普通用户', 2, 1, 105, '普通用户账户');
 
 -- 插入用户角色关联
 INSERT OR IGNORE INTO user_roles (user_id, role_id) VALUES

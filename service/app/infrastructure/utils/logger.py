@@ -133,8 +133,30 @@ def log_database_init():
 def log_database_success():
     """记录数据库初始化成功日志"""
     get_business_logger().info("Database initialized successfully!")
-    get_business_logger().info("Admin user: admin / admin123")
-    get_business_logger().info("Common user: common / common123")
+    
+    # 打印醒目的分隔线和默认账号信息
+    print("\n" + "="*60)
+    print("🎉 数据库初始化成功！")
+    print("📋 默认账号信息：")
+    print("=" * 60)
+    print("👤 管理员账号：")
+    print("   用户名: admin")
+    print("   密  码: admin123")
+    print("   权  限: 超级管理员")
+    print("")
+    print("👤 普通用户账号：")
+    print("   用户名: common")
+    print("   密  码: common123")
+    print("   权  限: 普通用户")
+    print("=" * 60)
+    print("⚠️  请在生产环境中及时修改默认密码！")
+    print("=" * 60 + "\n")
+    
+    # 同时记录到日志文件
+    get_business_logger().info("Default account information:")
+    get_business_logger().info("Admin user: admin / admin123 (Super Administrator)")
+    get_business_logger().info("Common user: common / common123 (Regular User)")
+    get_business_logger().warning("Please change default passwords in production environment!")
 
 def log_sql_execution(sql_file: str):
     """记录SQL文件执行日志"""
@@ -167,3 +189,13 @@ def log_database_exists():
 def log_database_with_data():
     """记录数据库已有数据日志"""
     get_business_logger().info("Database already initialized with data")
+    
+    # 打印默认账号信息提示
+    print("\n" + "-"*50)
+    print("💾 数据库已存在数据")
+    print("📋 默认账号信息提示：")
+    print("-" * 50)
+    print("👤 如果使用默认账号：")
+    print("   管理员: admin / admin123")
+    print("   普通用户: common / common123")
+    print("-" * 50 + "\n")

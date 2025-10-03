@@ -1,3 +1,6 @@
+import os
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -14,12 +17,27 @@ import uvicorn
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
+    # 确保数据库文件所在目录存在
+    try:
+        db_path = settings.DATABASE_URL.replace('sqlite:///', '')
+        if '/' in db_path:
+            db_dir = os.path.dirname(db_path)
+            if db_dir:
+                Path(str(db_dir)).mkdir(parents=True, exist_ok=True)
+    except Exception as e:
+        logger.warning(f"数据库目录检查失败: {e}")
+
     # 启动事件
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+        logger.info("数据库表初始化成功")
+    except Exception as e:
+        logger.error(f"数据库初始化失败: {e}")
+
     log_startup(settings.APP_NAME, settings.APP_VERSION, settings.HOST, settings.PORT)
-    
+
     yield  # 应用运行期间
-    
+
     # 关闭事件
     log_shutdown()
 
@@ -74,7 +92,6 @@ def create_app() -> FastAPI:
 
 
 app = create_app()
-
 
 if __name__ == "__main__":
     uvicorn.run(

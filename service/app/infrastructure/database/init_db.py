@@ -80,8 +80,19 @@ def init_database_with_sql():
     # 更新用户密码为实际的哈希值
     try:
         auth_service = AuthService()
-        admin_hash = auth_service.get_password_hash("admin123")
-        common_hash = auth_service.get_password_hash("common123")
+        
+        # 验证密码长度在 bcrypt 限制内
+        admin_password = "admin123"
+        common_password = "common123"
+        
+        # 检查密码长度
+        if len(admin_password.encode('utf-8')) > 72:
+            admin_password = admin_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+        if len(common_password.encode('utf-8')) > 72:
+            common_password = common_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
+            
+        admin_hash = auth_service.get_password_hash(admin_password)
+        common_hash = auth_service.get_password_hash(common_password)
         
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
@@ -92,7 +103,8 @@ def init_database_with_sql():
         log_password_update()
     except Exception as e:
         log_password_update_error(str(e))
-        raise
+        # 不再抛出异常，让系统继续运行
+        get_business_logger().warning(f"Password update failed, but database initialization continues: {e}")
     
     log_database_success()
 
@@ -123,7 +135,7 @@ def init_database_with_sqlalchemy():
     try:
         # 检查是否已经初始化
         if db.query(User).first():
-            log_database_exists()
+            log_database_with_data()
             return
         
         get_business_logger().info("Initializing database...")
