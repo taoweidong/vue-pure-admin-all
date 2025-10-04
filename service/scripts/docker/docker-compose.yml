@@ -15,7 +15,7 @@ services:
       - "3306:3306"
     volumes:
       - mysql_data:/var/lib/mysql
-      - ../../mysql/conf.d:/etc/mysql/conf.d
+      - ./mysql/conf.d:/etc/mysql/conf.d
     command: --default-authentication-plugin=mysql_native_password
     networks:
       - vue-pure-admin
@@ -35,7 +35,9 @@ services:
 
   # FastAPI后端服务
   backend:
-    build: ../..
+    build: 
+      context: ../..
+      dockerfile: scripts/docker/Dockerfile
     container_name: vue-pure-admin-backend
     restart: unless-stopped
     ports:
@@ -46,7 +48,7 @@ services:
       # MySQL 配置 (可选，取消注释并注释上面的SQLite配置)
       # DATABASE_URL: mysql+pymysql://root:123456@mysql:3306/vue_pure_admin
       REDIS_URL: redis://redis:6379/0
-      SECRET_KEY: your-secret-key-here-change-in-production
+      JWT_SECRET_KEY: your-secret-key-here-change-in-production
       DEBUG: "True"
     depends_on:
       # MySQL 配置时取消注释
@@ -54,6 +56,7 @@ services:
       - redis
     volumes:
       - ../..:/app
+      - ./logs:/app/logs
     networks:
       - vue-pure-admin
     command: >

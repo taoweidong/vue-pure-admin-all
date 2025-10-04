@@ -13,7 +13,7 @@ BACKUP_DIR="$DB_DIR/backup"
 # 激活虚拟环境（如果存在）
 activate_venv() {
     if [ -d "$VENV_DIR" ]; then
-        echo "🔧 Activating virtual environment..."
+        echo "[INFO] Activating virtual environment..."
         source "$VENV_DIR/bin/activate"
     fi
 }
@@ -35,19 +35,19 @@ show_help() {
 
 init_database() {
     activate_venv
-    echo "🔄 初始化数据库..."
+    echo "[INFO] 初始化数据库..."
     python -m app.infrastructure.database.init_db
     if [ $? -eq 0 ]; then
-        echo "✅ 数据库初始化完成"
+        echo "[SUCCESS] 数据库初始化完成"
     else
-        echo "❌ 数据库初始化失败"
+        echo "[ERROR] 数据库初始化失败"
         exit 1
     fi
 }
 
 backup_database() {
     if [ ! -f "$DB_FILE" ]; then
-        echo "❌ 数据库文件不存在: $DB_FILE"
+        echo "[ERROR] 数据库文件不存在: $DB_FILE"
         exit 1
     fi
     
@@ -62,27 +62,27 @@ backup_database() {
     cp "$DB_FILE" "$BACKUP_FILE"
     
     if [ $? -eq 0 ]; then
-        echo "✅ 数据库备份完成: $BACKUP_FILE"
+        echo "[SUCCESS] 数据库备份完成: $BACKUP_FILE"
         
         # 压缩备份文件
         gzip "$BACKUP_FILE"
-        echo "📦 备份文件已压缩: $BACKUP_FILE.gz"
+        echo "[INFO] 备份文件已压缩: $BACKUP_FILE.gz"
         
         # 显示备份文件大小
         BACKUP_SIZE=$(du -h "$BACKUP_FILE.gz" | cut -f1)
-        echo "📊 备份文件大小: $BACKUP_SIZE"
+        echo "[INFO] 备份文件大小: $BACKUP_SIZE"
     else
-        echo "❌ 数据库备份失败"
+        echo "[ERROR] 数据库备份失败"
         exit 1
     fi
 }
 
 restore_database() {
-    echo "📂 可用的备份文件:"
+    echo "[INFO] 可用的备份文件:"
     ls -la "$BACKUP_DIR"/*.gz 2>/dev/null | nl
     
     if [ $? -ne 0 ]; then
-        echo "❌ 没有找到备份文件"
+        echo "[ERROR] 没有找到备份文件"
         exit 1
     fi
     
@@ -93,11 +93,11 @@ restore_database() {
     BACKUP_FILE=$(ls "$BACKUP_DIR"/*.gz 2>/dev/null | sed -n "${choice}p")
     
     if [ -z "$BACKUP_FILE" ]; then
-        echo "❌ 无效的选择"
+        echo "[ERROR] 无效的选择"
         exit 1
     fi
     
-    echo "⚠️ 警告: 这将覆盖当前数据库!"
+    echo "[WARNING] 警告: 这将覆盖当前数据库!"
     read -p "确认恢复 $BACKUP_FILE 吗? (y/N): " confirm
     
     if [[ $confirm =~ ^[Yy]$ ]]; then
@@ -105,40 +105,40 @@ restore_database() {
         gunzip -c "$BACKUP_FILE" > "$DB_FILE"
         
         if [ $? -eq 0 ]; then
-            echo "✅ 数据库恢复完成"
+            echo "[SUCCESS] 数据库恢复完成"
         else
-            echo "❌ 数据库恢复失败"
+            echo "[ERROR] 数据库恢复失败"
             exit 1
         fi
     else
-        echo "❌ 恢复操作已取消"
+        echo "[INFO] 恢复操作已取消"
     fi
 }
 
 reset_database() {
-    echo "⚠️ 危险操作: 这将删除所有数据并重新初始化数据库!"
+    echo "[WARNING] 危险操作: 这将删除所有数据并重新初始化数据库!"
     read -p "确认重置数据库吗? (y/N): " confirm
     
     if [[ $confirm =~ ^[Yy]$ ]]; then
         # 先备份现有数据库
         if [ -f "$DB_FILE" ]; then
-            echo "📦 自动备份当前数据库..."
+            echo "[INFO] 自动备份当前数据库..."
             backup_database
         fi
         
         # 删除数据库文件
         rm -f "$DB_FILE"
-        echo "🗑️ 已删除现有数据库文件"
+        echo "[INFO] 已删除现有数据库文件"
         
         # 重新初始化
         init_database
     else
-        echo "❌ 重置操作已取消"
+        echo "[INFO] 重置操作已取消"
     fi
 }
 
 show_info() {
-    echo "📊 数据库信息:"
+    echo "[INFO] 数据库信息:"
     echo "   数据库文件: $DB_FILE"
     
     if [ -f "$DB_FILE" ]; then
@@ -158,7 +158,7 @@ show_info() {
     fi
     
     echo ""
-    echo "📂 备份文件:"
+    echo "[INFO] 备份文件:"
     if [ -d "$BACKUP_DIR" ] && [ "$(ls -A $BACKUP_DIR)" ]; then
         ls -lah "$BACKUP_DIR"/*.gz 2>/dev/null | while read line; do
             echo "   $line"

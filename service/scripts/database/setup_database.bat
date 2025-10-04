@@ -3,7 +3,7 @@ chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
 REM 切换到项目根目录
-cd /d "%~dp0\..\..\"
+cd /d "%~dp0\..\.."
 
 set VENV_DIR=venv
 
@@ -51,10 +51,10 @@ if not exist .env (
 )
 
 echo 请选择数据库类型：
-echo 1^) SQLite ^(推荐，无需额外配置^)
-echo 2^) MySQL ^(需要预先安装和配置MySQL^)
+echo 1) SQLite (推荐，无需额外配置)
+echo 2) MySQL (需要预先安装和配置MySQL)
 echo.
-set /p choice=请输入选择 ^(1 或 2^): 
+set /p choice=请输入选择 (1 或 2): 
 
 REM 移除空格和换行符
 set choice=%choice: =%
@@ -72,16 +72,16 @@ if "%choice%"=="1" (
 ) else if "%choice%"=="2" (
     echo [INFO] 配置 MySQL 数据库...
     echo.
-    set /p host=MySQL 主机地址 ^(默认: localhost^): 
+    set /p host=MySQL 主机地址 (默认: localhost): 
     if "!host!"=="" set host=localhost
     
-    set /p port=MySQL 端口 ^(默认: 3306^): 
+    set /p port=MySQL 端口 (默认: 3306): 
     if "!port!"=="" set port=3306
     
-    set /p dbname=数据库名称 ^(默认: vue_pure_admin^): 
+    set /p dbname=数据库名称 (默认: vue_pure_admin): 
     if "!dbname!"=="" set dbname=vue_pure_admin
     
-    set /p username=用户名 ^(默认: root^): 
+    set /p username=用户名 (默认: root): 
     if "!username!"=="" set username=root
     
     set /p password=密码: 

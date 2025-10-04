@@ -55,7 +55,7 @@ if not exist .env (
 
 REM 初始化数据库
 echo [INFO] Initializing Vue Pure Admin database...
-python -c "from app.infrastructure.database.init_vue_pure_admin import init_vue_pure_admin_database; init_vue_pure_admin_database()"
+python -m app.infrastructure.database.init_db
 
 REM 启动服务
 echo [INFO] Starting the service...

@@ -52,7 +52,7 @@ fi
 
 # 初始化数据库
 echo "🗄️ Initializing Vue Pure Admin database..."
-python -c "from app.infrastructure.database.init_vue_pure_admin import init_vue_pure_admin_database; init_vue_pure_admin_database()"
+python -m app.infrastructure.database.init_db
 
 # 启动服务
 echo "🎯 Starting the service..."

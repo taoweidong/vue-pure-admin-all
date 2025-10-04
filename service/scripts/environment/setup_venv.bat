@@ -8,7 +8,6 @@ echo [INFO] Python Virtual Environment Setup
 echo ====================================
 
 REM 检查Python版本
-:check_python
 python --version >nul 2>&1
 if errorlevel 1 (
     echo [ERROR] Python not found. Please install Python 3.11+
@@ -28,7 +27,6 @@ if errorlevel 1 (
 )
 
 REM 创建虚拟环境
-:create_venv
 if exist "%VENV_DIR%" (
     echo [WARNING] Virtual environment already exists at %VENV_DIR%
     set /p confirm=Do you want to recreate it? (y/N): 

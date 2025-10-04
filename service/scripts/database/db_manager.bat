@@ -3,7 +3,7 @@ chcp 65001 >nul 2>&1
 setlocal enabledelayedexpansion
 
 REM 切换到项目根目录
-cd /d "%~dp0\..\..\"
+cd /d "%~dp0\..\.."
 
 set VENV_DIR=venv
 set DB_DIR=.\db

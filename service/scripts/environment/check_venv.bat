@@ -40,10 +40,10 @@ if exist "%VENV_DIR%" (
                     pip show %%p >nul 2>&1
                     if !errorlevel! equ 0 (
                         for /f "tokens=2" %%v in ('pip show %%p ^| findstr "Version:"') do (
-                            echo   [SUCCESS] %%p (%%v^)
+                            echo   [SUCCESS] %%p (%%v)
                         )
                     ) else (
-                        echo   [ERROR] %%p (not installed^)
+                        echo   [ERROR] %%p (not installed)
                         set /a MISSING_COUNT+=1
                     )
                 )
@@ -61,11 +61,11 @@ if exist "%VENV_DIR%" (
             )
             
         ) else (
-            echo [ERROR] Virtual environment is incomplete (missing python.exe^)
+            echo [ERROR] Virtual environment is incomplete (missing python.exe)
             echo [TIP] Run 'scripts\environment\setup_venv.bat' to recreate the virtual environment
         )
     ) else (
-        echo [ERROR] Virtual environment is incomplete (missing activate.bat^)
+        echo [ERROR] Virtual environment is incomplete (missing activate.bat)
         echo [TIP] Run 'scripts\environment\setup_venv.bat' to recreate the virtual environment
     )
     
@@ -81,15 +81,15 @@ if defined VIRTUAL_ENV (
     echo [SUCCESS] Currently in virtual environment: %VIRTUAL_ENV%
 ) else (
     echo [INFO] Not currently in a virtual environment
-    if exist \"%VENV_DIR%\" (
-        echo [TIP] To activate: %VENV_DIR%\\Scripts\\activate.bat
+    if exist "%VENV_DIR%" (
+        echo [TIP] To activate: %VENV_DIR%\Scripts\activate.bat
     )
 )
 
 echo.
 echo [INFO] Available commands:
-echo   scripts\\environment\\setup_venv.bat     - Create/recreate virtual environment
-echo   start.bat          - Start service (auto-activates venv^)
-echo   %VENV_DIR%\\Scripts\\activate.bat - Manually activate virtual environment
+echo   scripts\environment\setup_venv.bat     - Create/recreate virtual environment
+echo   start.bat          - Start service (auto-activates venv)
+echo   %VENV_DIR%\Scripts\activate.bat - Manually activate virtual environment
 
 pause
