@@ -62,6 +62,7 @@ service/
 ├── main.py                  # 应用入口文件
 ├── start.bat/.sh           # 一键启动脚本
 └── requirements.txt         # Python依赖包
+```
 ├── db/                      # 数据库文件和初始化脚本
 │   ├── init/              # 数据库初始化SQL脚本
 │   └── vue_pure_admin.db  # SQLite数据库文件（运行后生成）
