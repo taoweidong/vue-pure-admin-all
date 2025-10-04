@@ -3,7 +3,6 @@ import sqlite3
 from sqlalchemy.orm import Session
 from app.infrastructure.database.database import SessionLocal, engine
 from app.domain.entities.models import *
-from app.domain.entities.logs import *
 from app.infrastructure.utils.auth import AuthService
 from app.infrastructure.utils.logger import (
     log_file_not_found, log_sql_execution, log_sql_error, log_database_init,

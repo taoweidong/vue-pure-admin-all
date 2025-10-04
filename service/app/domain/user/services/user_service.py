@@ -8,7 +8,7 @@ from sqlalchemy import and_, or_
 from app.domain.user.entities.user import User, UserRole, UserSession, UserProfile
 from app.domain.role.entities.role import Role
 from app.domain.organization.entities.department import Department
-from app.domain.rbac.services.permission_service import PermissionDomainService
+from app.domain.role.services.permission_service import PermissionDomainService
 from app.presentation.schemas.user import UserCreate, UserUpdate
 from app.infrastructure.utils.auth import AuthService
 
@@ -326,7 +326,7 @@ class UserApplicationService:
     
     def _can_assign_role(self, assigner_id: int, role_id: int) -> bool:
         """检查是否可以分配角色"""
-        from app.domain.rbac.services.permission_service import RoleHierarchyService
+        from app.domain.role.services.permission_service import RoleHierarchyService
         hierarchy_service = RoleHierarchyService(self.db)
         return hierarchy_service.can_assign_role(assigner_id, role_id)
     

@@ -1,34 +1,13 @@
-from pydantic_settings import BaseSettings
-from typing import Optional
+# -*- coding: utf-8 -*-
+"""
+应用配置模块
+重新导出共享配置以保持向后兼容性
+"""
 
+from shared.kernel.config import Settings, get_settings
 
-class Settings(BaseSettings):
-    # 应用配置
-    APP_NAME: str = "Vue Pure Admin Service"
-    APP_VERSION: str = "1.0.0"
-    DEBUG: bool = True
-    HOST: str = "127.0.0.1"
-    PORT: int = 8000
-    
-    # 数据库配置
-    DATABASE_URL: str = "sqlite:///./db/vue_pure_admin.db"
-    DATABASE_ECHO: bool = False
-    
-    # Redis配置（暂时禁用）
-    # REDIS_URL: str = "redis://localhost:6379/0"
-    # REDIS_PASSWORD: Optional[str] = None
-    
-    # JWT配置
-    SECRET_KEY: str = "your-secret-key-here"
-    ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    REFRESH_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7  # 7 days
-    
-    # CORS配置
-    ALLOWED_ORIGINS: list = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]
-    
-    class Config:
-        env_file = ".env"
+# 创建全局配置实例
+settings = get_settings()
 
-
-settings = Settings()
+# 导出配置类和实例
+__all__ = ['Settings', 'settings', 'get_settings']

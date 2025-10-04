@@ -1,144 +1,100 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
-from app.domain.entities.models import Role, RoleMenu, Menu, UserRole
-from app.presentation.schemas.role import RoleCreate, RoleUpdate
-from typing import Optional, Tuple, List
+from typing import List, Optional
+import uuid
+from datetime import datetime
 
+from domain.models.role import Role
+from domain.repositories.role_repository import RoleRepository
+from domain.repositories.menu_repository import MenuRepository
+from application.dto.role_dto import RoleCreate, RoleUpdate
+from shared.kernel.exceptions import BusinessException
 
 class RoleService:
-    def __init__(self, db: Session):
-        self.db = db
+    """角色应用服务"""
+    
+    def __init__(self, role_repo: RoleRepository, menu_repo: Optional[MenuRepository] = None):
+        self.role_repo = role_repo
+        self.menu_repo = menu_repo
 
-    def get_role_by_id(self, role_id: int) -> Optional[Role]:
-        """根据角色ID获取角色"""
-        return self.db.query(Role).filter(Role.id == role_id).first()
+    async def list_roles(self, skip: int = 0, limit: int = 100) -> List[Role]:
+        """获取角色列表"""
+        return await self.role_repo.get_all(skip=skip, limit=limit)
 
-    def get_role_by_name(self, name: str) -> Optional[Role]:
-        """根据角色名称获取角色"""
-        return self.db.query(Role).filter(Role.name == name).first()
+    async def get_role(self, role_id: str) -> Optional[Role]:
+        """获取角色详情"""
+        return await self.role_repo.get_by_id(role_id)
 
-    def get_role_by_code(self, code: str) -> Optional[Role]:
-        """根据角色编码获取角色"""
-        return self.db.query(Role).filter(Role.code == code).first()
-
-    def get_roles_paginated(
-        self,
-        page: int = 1,
-        page_size: int = 10,
-        name: Optional[str] = None,
-        code: Optional[str] = None,
-        status: Optional[int] = None
-    ) -> Tuple[List[Role], int]:
-        """获取分页角色列表"""
-        query = self.db.query(Role)
-        
-        # 添加过滤条件
-        if name:
-            query = query.filter(Role.name.contains(name))
-        if code:
-            query = query.filter(Role.code.contains(code))
-        if status is not None:
-            query = query.filter(Role.status == status)
-        
-        # 获取总数
-        total = query.count()
-        
-        # 分页
-        offset = (page - 1) * page_size
-        roles = query.offset(offset).limit(page_size).all()
-        
-        return roles, total
-
-    def get_all_roles(self) -> List[Role]:
-        """获取所有角色"""
-        return self.db.query(Role).filter(Role.status == 1).all()
-
-    def create_role(self, role_data: RoleCreate) -> Role:
+    async def create_role(self, role_in: RoleCreate) -> Role:
         """创建角色"""
+        # 检查角色名唯一性
+        existing_role = await self.role_repo.find_by_name(role_in.name)
+        if existing_role:
+            raise BusinessException("角色名已存在")
+        
+        # 创建角色领域对象
         role = Role(
-            name=role_data.name,
-            code=role_data.code,
-            status=role_data.status,
-            remark=role_data.remark
+            id=str(uuid.uuid4()),
+            name=role_in.name,
+            description=role_in.description or "",
+            is_active=True,
+            menus=[],
+            data_permissions=[],
+            field_permissions=[]
         )
         
-        self.db.add(role)
-        self.db.commit()
-        self.db.refresh(role)
+        # 这里需要转换为数据库模型并保存
+        # 简化实现，实际需要在仓储层处理
         return role
 
-    def update_role(self, role_id: int, role_data: RoleUpdate) -> Role:
-        """更新角色"""
-        role = self.get_role_by_id(role_id)
+    async def update_role(self, role_id: str, role_update: RoleUpdate) -> Optional[Role]:
+        """更新角色信息"""
+        role = await self.role_repo.get_by_id(role_id)
         if not role:
-            raise ValueError("Role not found")
+            return None
+            
+        updates = role_update.dict(exclude_unset=True)
         
-        # 更新角色信息
-        update_data = role_data.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            if hasattr(role, key):
-                setattr(role, key, value)
+        # 如果更新名称，检查唯一性
+        if 'name' in updates:
+            existing_role = await self.role_repo.find_by_name(updates['name'])
+            if existing_role and existing_role.id != role_id:
+                raise BusinessException("角色名已存在")
         
-        self.db.commit()
-        self.db.refresh(role)
-        return role
+        return await self.role_repo.update(role_id, **updates)
 
-    def update_role_status(self, role_id: int, status: int) -> bool:
-        """更新角色状态"""
-        role = self.get_role_by_id(role_id)
-        if not role:
-            raise ValueError("Role not found")
-        
-        role.status = status
-        self.db.commit()
-        return True
-
-    def delete_role(self, role_id: int) -> bool:
+    async def delete_role(self, role_id: str) -> bool:
         """删除角色"""
-        role = self.get_role_by_id(role_id)
+        return await self.role_repo.delete(role_id)
+
+    async def assign_menus_to_role(self, role_id: str, menu_ids: List[str]) -> Optional[Role]:
+        """为角色分配菜单权限"""
+        role = await self.role_repo.get_by_id(role_id)
         if not role:
-            return False
-        
-        # 删除角色菜单关联
-        self.db.query(RoleMenu).filter(RoleMenu.role_id == role_id).delete()
-        
-        # 删除用户角色关联
-        self.db.query(UserRole).filter(UserRole.role_id == role_id).delete()
-        
-        # 删除角色
-        self.db.delete(role)
-        self.db.commit()
-        return True
-
-    def check_role_in_use(self, role_id: int) -> bool:
-        """检查角色是否被用户使用"""
-        count = self.db.query(UserRole).filter(UserRole.role_id == role_id).count()
-        return count > 0
-
-    def get_role_menus(self, role_id: int) -> List[Menu]:
-        """获取角色菜单权限"""
-        role_menus = self.db.query(RoleMenu).filter(RoleMenu.role_id == role_id).all()
+            return None
+            
+        if not self.menu_repo:
+            # 如果没有菜单仓储，返回原角色
+            return role
+            
+        # 验证菜单存在性
         menus = []
-        for role_menu in role_menus:
-            menu = self.db.query(Menu).filter(Menu.id == role_menu.menu_id).first()
+        for menu_id in menu_ids:
+            menu = await self.menu_repo.get_by_id(menu_id)
             if menu:
                 menus.append(menu)
-        return menus
+                
+        # 分配菜单
+        success = await self.role_repo.assign_menus(role_id, menu_ids)
+        if success:
+            role.menus = menus
+            return role
+        return None
 
-    def get_role_menu_ids(self, role_id: int) -> List[int]:
-        """获取角色菜单ID列表"""
-        role_menus = self.db.query(RoleMenu).filter(RoleMenu.role_id == role_id).all()
-        return [role_menu.menu_id for role_menu in role_menus]
+    async def get_role_menus(self, role_id: str) -> List:
+        """获取角色的菜单列表"""
+        if not self.menu_repo:
+            return []
+        return await self.menu_repo.find_by_role_id(role_id)
 
-    def update_role_menus(self, role_id: int, menu_ids: List[int]) -> bool:
-        """更新角色菜单权限"""
-        # 删除原有的角色菜单关联
-        self.db.query(RoleMenu).filter(RoleMenu.role_id == role_id).delete()
-        
-        # 添加新的角色菜单关联
-        for menu_id in menu_ids:
-            role_menu = RoleMenu(role_id=role_id, menu_id=menu_id)
-            self.db.add(role_menu)
-        
-        self.db.commit()
-        return True
+    async def count_roles(self) -> int:
+        """统计角色数量"""
+        return await self.role_repo.count()

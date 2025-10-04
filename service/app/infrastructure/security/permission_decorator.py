@@ -7,7 +7,7 @@ from fastapi import HTTPException, Depends, status
 from sqlalchemy.orm import Session
 
 from app.infrastructure.database.database import get_db
-from app.domain.rbac.services.permission_service import PermissionDomainService
+from app.domain.role.services.permission_service import PermissionDomainService
 from app.presentation.api.v1.auth import get_current_user
 
 

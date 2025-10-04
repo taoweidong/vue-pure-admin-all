@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 from datetime import datetime
 
 from app.domain.user.entities.user import User, UserRole, UserSession, UserProfile
-from app.domain.rbac.value_objects.permission import UserPermissions
+from app.domain.role.value_objects.permission import UserPermissions
 
 
 class UserAggregate:

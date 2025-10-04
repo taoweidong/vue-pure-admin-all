@@ -15,7 +15,6 @@ import { useLayout } from "@/layout/hooks/useLayout";
 import LoginPhone from "./components/LoginPhone.vue";
 import LoginRegist from "./components/LoginRegist.vue";
 import LoginUpdate from "./components/LoginUpdate.vue";
-import LoginQrCode from "./components/LoginQrCode.vue";
 import { useUserStoreHook } from "@/store/modules/user";
 import { initRouter, getTopMenu } from "@/router/utils";
 import { bg, avatar, illustration } from "./utils/static";
@@ -216,21 +215,6 @@ watch(loginDay, value => {
                   :placeholder="t('login.purePassword')"
                   :prefix-icon="useRenderIcon(Lock)"
                 />
-              </el-form-item>
-            </Motion>
-
-            <Motion :delay="200">
-              <el-form-item prop="verifyCode">
-                <el-input
-                  v-model="ruleForm.verifyCode"
-                  clearable
-                  :placeholder="t('login.pureVerifyCode')"
-                  :prefix-icon="useRenderIcon(Keyhole)"
-                >
-                  <template v-slot:append>
-                    <ReImageVerify v-model:code="imgCode" />
-                  </template>
-                </el-input>
               </el-form-item>
             </Motion>
 

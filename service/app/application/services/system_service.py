@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from app.domain.entities.models import User, Role, Menu, Department, UserRole, RoleMenu
-from app.domain.entities.logs import LoginLog, OperationLog, SystemLog, OnlineUser
+from app.domain.audit.entities.log import LoginLog, OperationLog, SystemLog
+from app.domain.entities.online_user import OnlineUser
 from app.infrastructure.utils.auth import AuthService
 from typing import Optional, Tuple, List
 import datetime

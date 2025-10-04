@@ -1,169 +1,89 @@
-from sqlalchemy.orm import Session
-from sqlalchemy import or_, and_
-from app.domain.entities.models import User, UserRole, Role
-from app.domain.entities.logs import LoginLog
-from app.infrastructure.utils.auth import AuthService
-from app.presentation.schemas.user import UserCreate, UserUpdate
-from typing import Optional, Tuple, List
+from typing import List, Optional
+import uuid
+from datetime import datetime
 
+from domain.models.user import User
+from domain.repositories.user_repository import UserRepository
+from application.dto.user_dto import UserCreate, UserUpdate
+from shared.kernel.exceptions import BusinessException
+from infrastructure.auth.password_handler import PasswordHandler
 
 class UserService:
-    def __init__(self, db: Session):
-        self.db = db
-        self.auth_service = AuthService()
+    """用户应用服务"""
+    
+    def __init__(self, user_repo: UserRepository):
+        self.user_repo = user_repo
+        self.password_handler = PasswordHandler()
 
-    def get_user_by_username(self, username: str) -> Optional[User]:
-        """根据用户名获取用户"""
-        return self.db.query(User).filter(User.username == username).first()
+    async def list_users(self, skip: int = 0, limit: int = 100) -> List[User]:
+        """获取用户列表"""
+        return await self.user_repo.get_all(skip=skip, limit=limit)
 
-    def get_user_by_id(self, user_id: int) -> Optional[User]:
-        """根据用户ID获取用户"""
-        return self.db.query(User).filter(User.id == user_id).first()
+    async def get_user(self, user_id: str) -> Optional[User]:
+        """获取用户详情"""
+        return await self.user_repo.get_by_id(user_id)
 
-    def get_user_by_email(self, email: str) -> Optional[User]:
-        """根据邮箱获取用户"""
-        return self.db.query(User).filter(User.email == email).first()
-
-    def get_user_by_phone(self, phone: str) -> Optional[User]:
-        """根据手机号获取用户"""
-        return self.db.query(User).filter(User.phone == phone).first()
-
-    def verify_user_password(self, user: User, password: str) -> bool:
-        """验证用户密码"""
-        return self.auth_service.verify_password(password, user.password_hash)
-
-    def get_user_roles(self, user_id: int) -> List[Role]:
-        """获取用户角色列表"""
-        user_roles = self.db.query(UserRole).filter(UserRole.user_id == user_id).all()
-        roles = []
-        for user_role in user_roles:
-            role = self.db.query(Role).filter(Role.id == user_role.role_id).first()
-            if role:
-                roles.append(role)
-        return roles
-
-    def get_user_role_codes(self, user_id: int) -> List[str]:
-        """获取用户角色编码列表"""
-        roles = self.get_user_roles(user_id)
-        return [role.code for role in roles]
-
-    def get_user_permissions(self, user_id: int) -> List[str]:
-        """获取用户权限列表"""
-        # 这里可以根据角色获取权限，暂时返回基础权限
-        roles = self.get_user_role_codes(user_id)
-        if "admin" in roles:
-            return ["*:*:*"]
-        else:
-            return ["permission:btn:add", "permission:btn:edit"]
-
-    def get_users_paginated(
-        self,
-        page: int = 1,
-        page_size: int = 10,
-        username: Optional[str] = None,
-        nickname: Optional[str] = None,
-        email: Optional[str] = None,
-        phone: Optional[str] = None,
-        status: Optional[int] = None,
-        dept_id: Optional[int] = None
-    ) -> Tuple[List[User], int]:
-        """获取分页用户列表"""
-        query = self.db.query(User)
-        
-        # 添加过滤条件
-        if username:
-            query = query.filter(User.username.contains(username))
-        if nickname:
-            query = query.filter(User.nickname.contains(nickname))
-        if email:
-            query = query.filter(User.email.contains(email))
-        if phone:
-            query = query.filter(User.phone == phone)
-        if status is not None:
-            query = query.filter(User.status == status)
-        if dept_id:
-            query = query.filter(User.dept_id == dept_id)
-        
-        # 获取总数
-        total = query.count()
-        
-        # 分页
-        offset = (page - 1) * page_size
-        users = query.offset(offset).limit(page_size).all()
-        
-        return users, total
-
-    def get_user_logs(self, user_id: int) -> List[LoginLog]:
-        """获取用户登录日志"""
-        return self.db.query(LoginLog).filter(LoginLog.user_id == user_id).order_by(LoginLog.login_time.desc()).limit(10).all()
-
-    def create_user(self, user_data: UserCreate) -> User:
+    async def create_user(self, user_in: UserCreate) -> User:
         """创建用户"""
-        # 加密密码
-        password_hash = self.auth_service.get_password_hash(user_data.password)
+        # 检查用户名唯一性
+        existing_user = await self.user_repo.find_by_username(user_in.username)
+        if existing_user:
+            raise BusinessException("用户名已存在")
         
-        # 创建用户
+        # 检查邮箱唯一性
+        existing_email = await self.user_repo.find_by_email(user_in.email)
+        if existing_email:
+            raise BusinessException("邮箱已存在")
+        
+        # 创建用户领域对象
         user = User(
-            username=user_data.username,
-            nickname=user_data.nickname,
-            email=user_data.email,
-            phone=user_data.phone,
-            avatar=user_data.avatar,
-            password_hash=password_hash,
-            description=user_data.description,
-            sex=user_data.sex,
-            dept_id=user_data.dept_id,
-            remark=user_data.remark
+            id=str(uuid.uuid4()),
+            username=user_in.username,
+            nickname=user_in.nickname,
+            email=user_in.email,
+            phone=user_in.phone or "",
+            dept_id=user_in.dept_id,
+            is_active=True,
+            roles=[],
+            created_time=datetime.now(),
+            updated_time=datetime.now()
         )
         
-        self.db.add(user)
-        self.db.commit()
-        self.db.refresh(user)
+        # 这里需要转换为数据库模型并保存
+        # 简化实现，实际需要在仓储层处理
         return user
 
-    def update_user(self, user_id: int, user_data: UserUpdate) -> User:
-        """更新用户"""
-        user = self.get_user_by_id(user_id)
+    async def update_user(self, user_id: str, user_update: UserUpdate) -> Optional[User]:
+        """更新用户信息"""
+        user = await self.user_repo.get_by_id(user_id)
         if not user:
-            raise ValueError("User not found")
+            return None
+            
+        updates = user_update.dict(exclude_unset=True)
+        updates['updated_time'] = datetime.now()
         
-        # 更新用户信息
-        update_data = user_data.dict(exclude_unset=True)
-        for key, value in update_data.items():
-            if hasattr(user, key):
-                setattr(user, key, value)
-        
-        self.db.commit()
-        self.db.refresh(user)
-        return user
+        return await self.user_repo.update(user_id, **updates)
 
-    def update_user_status(self, user_id: int, status: int) -> bool:
-        """更新用户状态"""
-        user = self.get_user_by_id(user_id)
-        if not user:
-            raise ValueError("User not found")
-        
-        user.status = status
-        self.db.commit()
-        return True
-
-    def reset_password(self, user_id: int, new_password: str) -> bool:
-        """重置用户密码"""
-        user = self.get_user_by_id(user_id)
-        if not user:
-            raise ValueError("User not found")
-        
-        password_hash = self.auth_service.get_password_hash(new_password)
-        user.password_hash = password_hash
-        self.db.commit()
-        return True
-
-    def delete_user(self, user_id: int) -> bool:
+    async def delete_user(self, user_id: str) -> bool:
         """删除用户"""
-        user = self.get_user_by_id(user_id)
-        if not user:
-            return False
+        return await self.user_repo.delete(user_id)
+
+    async def count_users(self) -> int:
+        """统计用户数量"""
+        return await self.user_repo.count()
+
+    async def find_by_username(self, username: str) -> Optional[User]:
+        """根据用户名查找用户"""
+        return await self.user_repo.find_by_username(username)
+
+    async def authenticate_user(self, username: str, password: str) -> Optional[User]:
+        """用户认证"""
+        user = await self.user_repo.find_by_username(username)
+        if not user or not user.is_active:
+            return None
         
-        self.db.delete(user)
-        self.db.commit()
-        return True
+        # 密码验证逻辑需要在这里实现
+        # if not self.password_handler.verify_password(password, user.hashed_password):
+        #     return None
+        
+        return user

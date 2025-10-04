@@ -2,7 +2,8 @@ from sqlalchemy.orm import Session
 from app.application.services.user_service import UserService
 from app.infrastructure.utils.auth import AuthService
 # from app.infrastructure.database.redis import redis_service  # 暂时禁用Redis
-from app.domain.entities.logs import LoginLog, OnlineUser
+from app.domain.audit.entities.log import LoginLog
+from app.domain.entities.online_user import OnlineUser
 from datetime import datetime, timedelta
 from typing import Dict, Any
 
