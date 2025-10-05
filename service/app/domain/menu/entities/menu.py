@@ -1,79 +1,67 @@
-"""
-菜单领域实体
-"""
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON
+"""菜单领域实体"""
+from sqlalchemy import Column, String, DateTime, Boolean, Text, ForeignKey, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.infrastructure.database.database import Base
+from sqlalchemy.dialects.mysql import JSON
 
 
 class Menu(Base):
     """菜单实体"""
-    __tablename__ = "menus"
+    __tablename__ = "system_menu"
 
-    id = Column(Integer, primary_key=True, index=True)
-    parent_id = Column(Integer, ForeignKey("menus.id"), default=0, comment="父菜单ID")
-    title = Column(String(100), nullable=False, comment="菜单标题")
-    name = Column(String(100), nullable=True, comment="菜单名称")
-    path = Column(String(255), nullable=True, comment="路由路径")
-    component = Column(String(255), nullable=True, comment="组件路径")
-    menu_type = Column(Integer, default=0, comment="菜单类型 0-菜单 1-iframe 2-外链 3-按钮")
-    rank = Column(Integer, nullable=True, comment="排序")
-    redirect = Column(String(255), nullable=True, comment="重定向")
-    icon = Column(String(100), nullable=True, comment="图标")
-    extra_icon = Column(String(100), nullable=True, comment="额外图标")
-    enter_transition = Column(String(100), nullable=True, comment="进入动画")
-    leave_transition = Column(String(100), nullable=True, comment="离开动画")
-    active_path = Column(String(255), nullable=True, comment="激活路径")
-    auths = Column(String(255), nullable=True, comment="权限标识")
-    frame_src = Column(String(255), nullable=True, comment="iframe地址")
-    frame_loading = Column(Boolean, default=True, comment="iframe加载状态")
-    keep_alive = Column(Boolean, default=False, comment="缓存页面")
-    hidden_tag = Column(Boolean, default=False, comment="隐藏标签")
-    fixed_tag = Column(Boolean, default=False, comment="固定标签")
-    show_link = Column(Boolean, default=True, comment="显示链接")
-    show_parent = Column(Boolean, default=False, comment="显示父级")
-    is_external = Column(Boolean, default=False, comment="是否外部链接")
-    external_url = Column(String(500), nullable=True, comment="外部链接地址")
-    meta = Column(JSON, nullable=True, comment="菜单元数据")
-    status = Column(Integer, default=1, comment="状态 1-启用 0-禁用")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    id = Column(String(32), primary_key=True, comment="菜单ID")
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    menu_type = Column(SmallInteger, nullable=False, comment="菜单类型")
+    name = Column(String(128), unique=True, nullable=False, comment="菜单名称")
+    rank = Column(Integer, nullable=False, comment="排序")
+    path = Column(String(255), nullable=False, comment="路径")
+    component = Column(String(255), nullable=True, comment="组件")
+    is_active = Column(Boolean, nullable=False, comment="是否激活")
+    method = Column(String(10), nullable=True, comment="方法")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
+    parent_id = Column(String(32), ForeignKey("system_menu.id"), nullable=True, comment="父菜单ID")
+    meta_id = Column(String(32), ForeignKey("system_menumeta.id"), nullable=False, comment="菜单元数据ID")
 
     # 关系
-    children = relationship("Menu", backref="parent", remote_side=[id])
-    role_menus = relationship("RoleMenu", back_populates="menu")
-    menu_permissions = relationship("MenuPermission", back_populates="menu", cascade="all, delete-orphan")
+    parent = relationship("Menu", foreign_keys=[parent_id], remote_side=[id], back_populates="children")
+    children = relationship("Menu", foreign_keys=[parent_id], back_populates="parent")
+    roles = relationship("RoleMenu", back_populates="menu")
+    meta = relationship("MenuMeta", back_populates="menu")
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
-class MenuPermission(Base):
-    """菜单权限关联表"""
-    __tablename__ = "menu_permissions"
+class MenuMeta(Base):
+    """菜单元数据实体"""
+    __tablename__ = "system_menumeta"
 
-    id = Column(Integer, primary_key=True, index=True)
-    menu_id = Column(Integer, ForeignKey("menus.id"), nullable=False, comment="菜单ID")
-    permission_id = Column(Integer, ForeignKey("permissions.id"), nullable=False, comment="权限ID")
-    required = Column(Boolean, default=True, comment="是否必需")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    id = Column(String(32), primary_key=True, comment="菜单元数据ID")
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    title = Column(String(255), nullable=True, comment="标题")
+    icon = Column(String(255), nullable=True, comment="图标")
+    r_svg_name = Column(String(255), nullable=True, comment="SVG名称")
+    is_show_menu = Column(Boolean, nullable=False, comment="是否显示菜单")
+    is_show_parent = Column(Boolean, nullable=False, comment="是否显示父级")
+    is_keepalive = Column(Boolean, nullable=False, comment="是否保持活跃")
+    frame_url = Column(String(255), nullable=True, comment="框架URL")
+    frame_loading = Column(Boolean, nullable=False, comment="框架加载")
+    transition_enter = Column(String(255), nullable=True, comment="进入过渡")
+    transition_leave = Column(String(255), nullable=True, comment="离开过渡")
+    is_hidden_tag = Column(Boolean, nullable=False, comment="是否隐藏标签")
+    fixed_tag = Column(Boolean, nullable=False, comment="固定标签")
+    dynamic_level = Column(Integer, nullable=False, comment="动态级别")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
 
     # 关系
-    menu = relationship("Menu", back_populates="menu_permissions")
-    permission = relationship("Permission")
-
-
-class MenuOperation(Base):
-    """菜单操作记录"""
-    __tablename__ = "menu_operations"
-
-    id = Column(Integer, primary_key=True, index=True)
-    menu_id = Column(Integer, ForeignKey("menus.id"), nullable=False, comment="菜单ID")
-    operator_id = Column(Integer, ForeignKey("users.id"), nullable=False, comment="操作人ID")
-    operation_type = Column(String(20), nullable=False, comment="操作类型 create|update|delete|sort")
-    old_value = Column(JSON, nullable=True, comment="操作前的值")
-    new_value = Column(JSON, nullable=True, comment="操作后的值")
-    remark = Column(String(255), nullable=True, comment="备注")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
-
-    # 关系
-    menu = relationship("Menu")
-    operator = relationship("User")
+    menu = relationship("Menu", back_populates="meta", uselist=False)
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")

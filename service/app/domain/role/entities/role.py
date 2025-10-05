@@ -1,7 +1,7 @@
 """
 角色领域实体
 """
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey
+from sqlalchemy import Column, String, DateTime, Boolean, Text, ForeignKey, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.infrastructure.database.database import Base
@@ -9,43 +9,37 @@ from app.infrastructure.database.database import Base
 
 class Role(Base):
     """角色实体"""
-    __tablename__ = "roles"
+    __tablename__ = "system_userrole"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String(50), unique=True, nullable=False, comment="角色名称")
-    code = Column(String(50), unique=True, nullable=False, comment="角色编码")
-    type = Column(String(20), default="custom", comment="角色类型 system|custom")
-    level = Column(Integer, default=0, comment="角色级别，数字越大级别越高")
-    parent_id = Column(Integer, ForeignKey("roles.id"), default=0, comment="父角色ID")
-    description = Column(Text, nullable=True, comment="角色描述")
-    is_default = Column(Boolean, default=False, comment="是否默认角色")
-    max_users = Column(Integer, nullable=True, comment="最大用户数限制")
-    status = Column(Integer, default=1, comment="状态 1-启用 0-禁用")
-    remark = Column(Text, nullable=True, comment="备注")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    id = Column(String(32), primary_key=True, comment="角色ID")
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    name = Column(String(128), unique=True, nullable=False, comment="角色名称")
+    code = Column(String(128), unique=True, nullable=False, comment="角色编码")
+    is_active = Column(Boolean, nullable=False, comment="是否激活")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
 
     # 关系
-    children = relationship("Role", backref="parent", remote_side=[id])
-    user_roles = relationship("UserRole", back_populates="role")
-    role_menus = relationship("RoleMenu", back_populates="role", cascade="all, delete-orphan")
-    role_permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
-    data_scopes = relationship("DataScope", back_populates="role", cascade="all, delete-orphan")
+    users = relationship("UserRole", back_populates="role")
+    menus = relationship("RoleMenu", back_populates="role")
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
 class RoleMenu(Base):
     """角色菜单关联表"""
-    __tablename__ = "role_menus"
+    __tablename__ = "system_userrole_menu"
 
-    id = Column(Integer, primary_key=True, index=True)
-    role_id = Column(Integer, ForeignKey("roles.id"), nullable=False, comment="角色ID")
-    menu_id = Column(Integer, ForeignKey("menus.id"), nullable=False, comment="菜单ID")
-    granted = Column(Boolean, default=True, comment="是否授权")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    userrole_id = Column(String(32), ForeignKey("system_userrole.id"), nullable=False, comment="角色ID")
+    menu_id = Column(String(32), ForeignKey("system_menu.id"), nullable=False, comment="菜单ID")
 
     # 关系
-    role = relationship("Role", back_populates="role_menus")
-    menu = relationship("Menu", back_populates="role_menus")
+    role = relationship("Role", back_populates="menus")
+    menu = relationship("Menu", back_populates="roles")
 
 
 class RoleInheritance(Base):

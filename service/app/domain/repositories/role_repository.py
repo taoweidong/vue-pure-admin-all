@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from domain.repositories.base_repository import BaseRepository
-from domain.models.role import Role
+from app.domain.repositories.base_repository import BaseRepository
+from app.domain.models.role import Role
 
 class RoleRepository(BaseRepository[Role], ABC):
     """角色仓储接口"""

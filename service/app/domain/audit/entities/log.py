@@ -1,86 +1,85 @@
 """
 日志审计领域实体
 """
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON
+from sqlalchemy import Column, String, DateTime, Boolean, Text, ForeignKey, Integer, BigInteger, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.infrastructure.database.database import Base
+from sqlalchemy.dialects.mysql import JSON
 
 
 class LoginLog(Base):
     """登录日志实体"""
-    __tablename__ = "login_logs"
+    __tablename__ = "system_userloginlog"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="用户ID")
-    username = Column(String(50), nullable=False, comment="用户名")
-    login_type = Column(String(20), default="web", comment="登录类型 web|mobile|api")
-    client_type = Column(String(20), nullable=True, comment="客户端类型")
-    ip = Column(String(45), nullable=True, comment="IP地址")
-    location = Column(String(255), nullable=True, comment="登录地点")
-    browser = Column(String(100), nullable=True, comment="浏览器")
-    os = Column(String(100), nullable=True, comment="操作系统")
-    device = Column(String(100), nullable=True, comment="设备信息")
-    user_agent = Column(Text, nullable=True, comment="用户代理")
-    status = Column(Integer, default=1, comment="登录状态 1-成功 0-失败")
-    failure_reason = Column(String(255), nullable=True, comment="失败原因")
-    session_id = Column(String(255), nullable=True, comment="会话ID")
-    logout_time = Column(DateTime(timezone=True), nullable=True, comment="登出时间")
-    duration = Column(Integer, nullable=True, comment="会话持续时间(秒)")
-    login_time = Column(DateTime(timezone=True), server_default=func.now(), comment="登录时间")
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    status = Column(Boolean, nullable=False, comment="状态")
+    ipaddress = Column(String(39), nullable=True, comment="IP地址")
+    browser = Column(String(64), nullable=True, comment="浏览器")
+    system = Column(String(64), nullable=True, comment="系统")
+    agent = Column(String(128), nullable=True, comment="代理")
+    login_type = Column(SmallInteger, nullable=False, comment="登录类型")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
 
     # 关系
     user = relationship("User", back_populates="login_logs")
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
 class OperationLog(Base):
     """操作日志实体"""
-    __tablename__ = "operation_logs"
+    __tablename__ = "system_operationlog"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="用户ID")
-    username = Column(String(50), nullable=True, comment="用户名")
-    module = Column(String(100), nullable=True, comment="操作模块")
-    operation = Column(String(100), nullable=True, comment="操作名称")
-    method = Column(String(10), nullable=True, comment="请求方法")
-    request_url = Column(String(500), nullable=True, comment="请求URL")
-    request_params = Column(Text, nullable=True, comment="请求参数")
-    response_data = Column(Text, nullable=True, comment="响应数据")
-    business_id = Column(String(100), nullable=True, comment="业务ID")
-    business_type = Column(String(50), nullable=True, comment="业务类型")
-    ip = Column(String(45), nullable=True, comment="IP地址")
-    location = Column(String(255), nullable=True, comment="操作地点")
-    browser = Column(String(100), nullable=True, comment="浏览器")
-    os = Column(String(100), nullable=True, comment="操作系统")
-    user_agent = Column(Text, nullable=True, comment="用户代理")
-    status = Column(Integer, default=1, comment="操作状态 1-成功 0-失败")
-    error_msg = Column(Text, nullable=True, comment="错误消息")
-    execute_time = Column(Integer, nullable=True, comment="执行时间(毫秒)")
-    remark = Column(String(500), nullable=True, comment="备注")
-    operate_time = Column(DateTime(timezone=True), server_default=func.now(), comment="操作时间")
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    module = Column(String(64), nullable=True, comment="模块")
+    path = Column(String(400), nullable=True, comment="路径")
+    body = Column(Text, nullable=True, comment="请求体")
+    method = Column(String(8), nullable=True, comment="方法")
+    ipaddress = Column(String(39), nullable=True, comment="IP地址")
+    browser = Column(String(64), nullable=True, comment="浏览器")
+    system = Column(String(64), nullable=True, comment="系统")
+    response_code = Column(Integer, nullable=True, comment="响应码")
+    response_result = Column(Text, nullable=True, comment="响应结果")
+    status_code = Column(Integer, nullable=True, comment="状态码")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
 
     # 关系
     user = relationship("User", back_populates="operation_logs")
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
 class SystemLog(Base):
     """系统日志实体"""
-    __tablename__ = "system_logs"
+    __tablename__ = "system_systemconfig"
 
-    id = Column(Integer, primary_key=True, index=True)
-    level = Column(String(20), nullable=False, comment="日志级别 DEBUG|INFO|WARN|ERROR|FATAL")
-    category = Column(String(50), nullable=True, comment="日志分类")
-    module = Column(String(100), nullable=True, comment="模块名称")
-    function = Column(String(100), nullable=True, comment="函数名称")
-    message = Column(Text, nullable=False, comment="日志消息")
-    detail = Column(Text, nullable=True, comment="详细信息")
-    exception = Column(Text, nullable=True, comment="异常信息")
-    trace_id = Column(String(100), nullable=True, comment="追踪ID")
-    span_id = Column(String(100), nullable=True, comment="跨度ID")
-    ip = Column(String(45), nullable=True, comment="IP地址")
-    user_agent = Column(String(255), nullable=True, comment="用户代理")
-    extra_data = Column(JSON, nullable=True, comment="额外数据")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
+    id = Column(String(32), primary_key=True, comment="系统配置ID")
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    value = Column(Text, nullable=False, comment="值")
+    is_active = Column(Boolean, nullable=False, comment="是否激活")
+    access = Column(Boolean, nullable=False, comment="访问权限")
+    key = Column(String(255), unique=True, nullable=False, comment="键")
+    inherit = Column(Boolean, nullable=False, comment="继承")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
+
+    # 关系
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
 class AuditLog(Base):

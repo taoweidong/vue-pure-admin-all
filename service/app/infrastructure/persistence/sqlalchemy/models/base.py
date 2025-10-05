@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, DateTime, Boolean, Integer, Text
-from infrastructure.persistence.sqlalchemy.database import Base
+from app.infrastructure.persistence.sqlalchemy.database import Base
 from datetime import datetime
 import uuid
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from domain.repositories.base_repository import BaseRepository
-from domain.models.user import User
+from app.domain.repositories.base_repository import BaseRepository
+from app.domain.models.user import User
 
 class UserRepository(BaseRepository[User], ABC):
     """用户仓储接口"""

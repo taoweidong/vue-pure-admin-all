@@ -9,7 +9,7 @@ role_menu_association = Table(
     BaseModel.metadata,
     Column('id', BigInteger, primary_key=True, autoincrement=True),
     Column('userrole_id', String(32), ForeignKey('system_userrole.id')),
-    Column('menu_id', String(32), ForeignKey('system_menu.id'))
+    Column('menu_id', String(32), ForeignKey('menus.id'))
 )
 
 # 部门角色关联表
@@ -27,7 +27,7 @@ datapermission_menu_association = Table(
     BaseModel.metadata,
     Column('id', BigInteger, primary_key=True, autoincrement=True),
     Column('datapermission_id', String(32), ForeignKey('system_datapermission.id')),
-    Column('menu_id', String(32), ForeignKey('system_menu.id'))
+    Column('menu_id', String(32), ForeignKey('menus.id'))
 )
 
 # 部门数据权限关联表
@@ -61,7 +61,7 @@ class UserRole(BaseModel):
     
     # 多对多关系
     users = relationship("UserInfo", secondary=user_role_association, back_populates="roles")
-    menus = relationship("Menu", secondary=role_menu_association, back_populates="roles")
+    menus = relationship("MenuModel", secondary=role_menu_association, back_populates="roles")
     departments = relationship("DeptInfo", secondary=dept_role_association, back_populates="roles")
     
     def __repr__(self):
@@ -90,7 +90,7 @@ class DataPermission(BaseModel):
     
     # 多对多关系
     users = relationship("UserInfo", secondary="system_userinfo_rules", back_populates="rules")
-    menus = relationship("Menu", secondary=datapermission_menu_association, back_populates="data_permissions")
+    menus = relationship("MenuModel", secondary=datapermission_menu_association, back_populates="data_permissions")
     departments = relationship("DeptInfo", secondary=dept_rule_association, back_populates="rules")
     
     def __repr__(self):
@@ -107,14 +107,14 @@ class FieldPermission(BaseModel):
     creator_id = Column(BigInteger, ForeignKey('system_userinfo.id'), nullable=True)
     modifier_id = Column(BigInteger, ForeignKey('system_userinfo.id'), nullable=True)
     dept_belong_id = Column(String(32), ForeignKey('system_deptinfo.id'), nullable=True)
-    menu_id = Column(String(32), ForeignKey('system_menu.id'), nullable=False)
+    menu_id = Column(String(32), ForeignKey('menus.id'), nullable=False)
     role_id = Column(String(32), ForeignKey('system_userrole.id'), nullable=False)
     
     # 关系
     creator = relationship("UserInfo", foreign_keys=[creator_id])
     modifier = relationship("UserInfo", foreign_keys=[modifier_id])
     dept_belong = relationship("DeptInfo", foreign_keys=[dept_belong_id])
-    menu = relationship("Menu", foreign_keys=[menu_id])
+    menu = relationship("MenuModel", foreign_keys=[menu_id])
     role = relationship("UserRole", foreign_keys=[role_id])
     
     def __repr__(self):

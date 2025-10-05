@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.infrastructure.database.database import get_db
-from app.presentation.api.auth import get_current_user
+from app.presentation.api.dependencies import get_current_user
 
 router = APIRouter()
 
@@ -198,38 +198,16 @@ async def get_async_routes(
                 },
                 {
                     "path": "/permission/button",
+                    "name": "PermissionButton",
                     "meta": {
                         "title": "menus.purePermissionButton",
                         "roles": ["admin", "common"]
-                    },
-                    "children": [
-                        {
-                            "path": "/permission/button/router",
-                            "component": "permission/button/index",
-                            "name": "PermissionButtonRouter",
-                            "meta": {
-                                "title": "menus.purePermissionButtonRouter",
-                                "auths": [
-                                    "permission:btn:add",
-                                    "permission:btn:edit",
-                                    "permission:btn:delete"
-                                ]
-                            }
-                        },
-                        {
-                            "path": "/permission/button/login",
-                            "component": "permission/button/perms",
-                            "name": "PermissionButtonLogin",
-                            "meta": {
-                                "title": "menus.purePermissionButtonLogin"
-                            }
-                        }
-                    ]
+                    }
                 }
             ]
         }
 
-        # 标签页操作路由
+        # 标签页路由
         tabs_router = {
             "path": "/tabs",
             "meta": {
@@ -249,12 +227,80 @@ async def get_async_routes(
             ]
         }
 
-        # 根据角色返回路由
-        routes = [permission_router, tabs_router]
-        
+        # 外部页面路由
+        iframe_router = {
+            "path": "/iframe",
+            "meta": {
+                "icon": "ri:links-fill",
+                "title": "menus.pureExternalPage",
+                "rank": 7
+            },
+            "children": [
+                {
+                    "path": "/iframe/external",
+                    "name": "PureIframeExternal",
+                    "meta": {
+                        "title": "menus.pureExternalDoc",
+                        "roles": ["admin", "common"]
+                    },
+                    "children": [
+                        {
+                            "path": "/external",
+                            "name": "https://pure-admin.cn/",
+                            "meta": {
+                                "title": "menus.pureExternalLink",
+                                "roles": ["admin", "common"]
+                            }
+                        },
+                        {
+                            "path": "/pureUtilsLink",
+                            "name": "https://pure-admin-utils.netlify.app/",
+                            "meta": {
+                                "title": "menus.pureUtilsLink",
+                                "roles": ["admin", "common"]
+                            }
+                        }
+                    ]
+                },
+                {
+                    "path": "/iframe/embedded",
+                    "name": "PureIframeEmbedded",
+                    "meta": {
+                        "title": "menus.pureEmbeddedDoc",
+                        "roles": ["admin", "common"]
+                    },
+                    "children": [
+                        {
+                            "path": "/iframe/ep",
+                            "name": "FrameEp",
+                            "meta": {
+                                "title": "menus.pureEpDoc",
+                                "frameSrc": "https://element-plus.org/zh-CN/",
+                                "roles": ["admin", "common"]
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        # 根据用户角色返回不同的路由
+        routes = []
         if is_admin:
-            routes.extend([system_management_router, system_monitor_router])
-        
+            routes.extend([
+                iframe_router,
+                permission_router,
+                system_management_router,
+                system_monitor_router,
+                tabs_router
+            ])
+        else:
+            routes.extend([
+                iframe_router,
+                permission_router,
+                tabs_router
+            ])
+
         return {
             "success": True,
             "data": routes

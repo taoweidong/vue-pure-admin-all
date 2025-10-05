@@ -3,12 +3,12 @@ from sqlalchemy.orm import Session
 from typing import Optional
 
 from app.infrastructure.database.database import get_db
-from app.presentation.api.v1.auth import get_current_user
+from app.presentation.api.dependencies import get_current_user
 from app.presentation.schemas.menu import *
 from app.presentation.schemas.common import *
 from app.application.services.menu_service import MenuService
 
-router = APIRouter()
+router = APIRouter(prefix="/api/v1/menus", tags=["菜单管理"])
 
 
 @router.get("", response_model=PaginatedResponse[MenuInList])
@@ -35,30 +35,30 @@ async def get_menus(
         menu_list = []
         for menu in menus:
             menu_list.append(MenuInList(
-                id=menu.id,
-                parent_id=menu.parent_id,
-                title=menu.title,
-                name=menu.name,
-                path=menu.path,
-                component=menu.component,
-                menu_type=menu.menu_type,
-                rank=menu.rank,
-                redirect=menu.redirect,
-                icon=menu.icon,
-                extra_icon=menu.extra_icon,
-                enter_transition=menu.enter_transition,
-                leave_transition=menu.leave_transition,
-                active_path=menu.active_path,
-                auths=menu.auths,
-                frame_src=menu.frame_src,
-                frame_loading=menu.frame_loading,
-                keep_alive=menu.keep_alive,
-                hidden_tag=menu.hidden_tag,
-                fixed_tag=menu.fixed_tag,
-                show_link=menu.show_link,
-                show_parent=menu.show_parent,
-                created_at=menu.created_at,
-                updated_at=menu.updated_at
+                id=getattr(menu, 'id', 0),
+                parent_id=getattr(menu, 'parent_id', 0) or 0,
+                title=getattr(menu, 'title', ''),
+                name=getattr(menu, 'name', None),
+                path=getattr(menu, 'path', None),
+                component=getattr(menu, 'component', None),
+                menu_type=getattr(menu, 'menu_type', 1),
+                rank=getattr(menu, 'rank', 0) or 0,
+                redirect=getattr(menu, 'redirect', None),
+                icon=getattr(menu, 'icon', None),
+                extra_icon=getattr(menu, 'extra_icon', None),
+                enter_transition=getattr(menu, 'enter_transition', None),
+                leave_transition=getattr(menu, 'leave_transition', None),
+                active_path=getattr(menu, 'active_path', None),
+                auths=getattr(menu, 'auths', None),
+                frame_src=getattr(menu, 'frame_src', None),
+                frame_loading=bool(getattr(menu, 'frame_loading', False)),
+                keep_alive=bool(getattr(menu, 'keep_alive', False)),
+                hidden_tag=bool(getattr(menu, 'hidden_tag', False)),
+                fixed_tag=bool(getattr(menu, 'fixed_tag', False)),
+                show_link=bool(getattr(menu, 'show_link', True)),
+                show_parent=bool(getattr(menu, 'show_parent', True)),
+                created_at=getattr(menu, 'created_at', None),
+                updated_at=getattr(menu, 'updated_at', None)
             ))
         
         pages = (total + page_size - 1) // page_size
@@ -110,30 +110,30 @@ async def get_menu(
             raise HTTPException(status_code=404, detail="菜单不存在")
         
         menu_detail = MenuDetail(
-            id=menu.id,
-            parent_id=menu.parent_id,
-            title=menu.title,
-            name=menu.name,
-            path=menu.path,
-            component=menu.component,
-            menu_type=menu.menu_type,
-            rank=menu.rank,
-            redirect=menu.redirect,
-            icon=menu.icon,
-            extra_icon=menu.extra_icon,
-            enter_transition=menu.enter_transition,
-            leave_transition=menu.leave_transition,
-            active_path=menu.active_path,
-            auths=menu.auths,
-            frame_src=menu.frame_src,
-            frame_loading=menu.frame_loading,
-            keep_alive=menu.keep_alive,
-            hidden_tag=menu.hidden_tag,
-            fixed_tag=menu.fixed_tag,
-            show_link=menu.show_link,
-            show_parent=menu.show_parent,
-            created_at=menu.created_at,
-            updated_at=menu.updated_at
+            id=getattr(menu, 'id', 0),
+            parent_id=getattr(menu, 'parent_id', 0) or 0,
+            title=getattr(menu, 'title', ''),
+            name=getattr(menu, 'name', None),
+            path=getattr(menu, 'path', None),
+            component=getattr(menu, 'component', None),
+            menu_type=getattr(menu, 'menu_type', 1),
+            rank=getattr(menu, 'rank', 0) or 0,
+            redirect=getattr(menu, 'redirect', None),
+            icon=getattr(menu, 'icon', None),
+            extra_icon=getattr(menu, 'extra_icon', None),
+            enter_transition=getattr(menu, 'enter_transition', None),
+            leave_transition=getattr(menu, 'leave_transition', None),
+            active_path=getattr(menu, 'active_path', None),
+            auths=getattr(menu, 'auths', None),
+            frame_src=getattr(menu, 'frame_src', None),
+            frame_loading=bool(getattr(menu, 'frame_loading', False)),
+            keep_alive=bool(getattr(menu, 'keep_alive', False)),
+            hidden_tag=bool(getattr(menu, 'hidden_tag', False)),
+            fixed_tag=bool(getattr(menu, 'fixed_tag', False)),
+            show_link=bool(getattr(menu, 'show_link', True)),
+            show_parent=bool(getattr(menu, 'show_parent', True)),
+            created_at=getattr(menu, 'created_at', None),
+            updated_at=getattr(menu, 'updated_at', None)
         )
         
         return BaseResponse(
@@ -163,30 +163,30 @@ async def create_menu(
         menu = menu_service.create_menu(menu_data)
         
         menu_detail = MenuDetail(
-            id=menu.id,
-            parent_id=menu.parent_id,
-            title=menu.title,
-            name=menu.name,
-            path=menu.path,
-            component=menu.component,
-            menu_type=menu.menu_type,
-            rank=menu.rank,
-            redirect=menu.redirect,
-            icon=menu.icon,
-            extra_icon=menu.extra_icon,
-            enter_transition=menu.enter_transition,
-            leave_transition=menu.leave_transition,
-            active_path=menu.active_path,
-            auths=menu.auths,
-            frame_src=menu.frame_src,
-            frame_loading=menu.frame_loading,
-            keep_alive=menu.keep_alive,
-            hidden_tag=menu.hidden_tag,
-            fixed_tag=menu.fixed_tag,
-            show_link=menu.show_link,
-            show_parent=menu.show_parent,
-            created_at=menu.created_at,
-            updated_at=menu.updated_at
+            id=getattr(menu, 'id', 0),
+            parent_id=getattr(menu, 'parent_id', 0) or 0,
+            title=getattr(menu, 'title', ''),
+            name=getattr(menu, 'name', None),
+            path=getattr(menu, 'path', None),
+            component=getattr(menu, 'component', None),
+            menu_type=getattr(menu, 'menu_type', 1),
+            rank=getattr(menu, 'rank', 0) or 0,
+            redirect=getattr(menu, 'redirect', None),
+            icon=getattr(menu, 'icon', None),
+            extra_icon=getattr(menu, 'extra_icon', None),
+            enter_transition=getattr(menu, 'enter_transition', None),
+            leave_transition=getattr(menu, 'leave_transition', None),
+            active_path=getattr(menu, 'active_path', None),
+            auths=getattr(menu, 'auths', None),
+            frame_src=getattr(menu, 'frame_src', None),
+            frame_loading=bool(getattr(menu, 'frame_loading', False)),
+            keep_alive=bool(getattr(menu, 'keep_alive', False)),
+            hidden_tag=bool(getattr(menu, 'hidden_tag', False)),
+            fixed_tag=bool(getattr(menu, 'fixed_tag', False)),
+            show_link=bool(getattr(menu, 'show_link', True)),
+            show_parent=bool(getattr(menu, 'show_parent', True)),
+            created_at=getattr(menu, 'created_at', None),
+            updated_at=getattr(menu, 'updated_at', None)
         )
         
         return BaseResponse(
@@ -218,36 +218,36 @@ async def update_menu(
         # 检查菜单名称是否已被其他菜单使用
         if menu_data.name and menu_data.name != menu.name:
             existing_menu = menu_service.get_menu_by_name(menu_data.name)
-            if existing_menu and existing_menu.id != menu_id:
+            if existing_menu is not None and str(existing_menu.id) != str(menu_id):
                 raise HTTPException(status_code=409, detail="菜单名称已被其他菜单使用")
         
         updated_menu = menu_service.update_menu(menu_id, menu_data)
         
         menu_detail = MenuDetail(
-            id=updated_menu.id,
-            parent_id=updated_menu.parent_id,
-            title=updated_menu.title,
-            name=updated_menu.name,
-            path=updated_menu.path,
-            component=updated_menu.component,
-            menu_type=updated_menu.menu_type,
-            rank=updated_menu.rank,
-            redirect=updated_menu.redirect,
-            icon=updated_menu.icon,
-            extra_icon=updated_menu.extra_icon,
-            enter_transition=updated_menu.enter_transition,
-            leave_transition=updated_menu.leave_transition,
-            active_path=updated_menu.active_path,
-            auths=updated_menu.auths,
-            frame_src=updated_menu.frame_src,
-            frame_loading=updated_menu.frame_loading,
-            keep_alive=updated_menu.keep_alive,
-            hidden_tag=updated_menu.hidden_tag,
-            fixed_tag=updated_menu.fixed_tag,
-            show_link=updated_menu.show_link,
-            show_parent=updated_menu.show_parent,
-            created_at=updated_menu.created_at,
-            updated_at=updated_menu.updated_at
+            id=getattr(updated_menu, 'id', 0),
+            parent_id=getattr(updated_menu, 'parent_id', 0) or 0,
+            title=getattr(updated_menu, 'title', ''),
+            name=getattr(updated_menu, 'name', None),
+            path=getattr(updated_menu, 'path', None),
+            component=getattr(updated_menu, 'component', None),
+            menu_type=getattr(updated_menu, 'menu_type', 1),
+            rank=getattr(updated_menu, 'rank', 0) or 0,
+            redirect=getattr(updated_menu, 'redirect', None),
+            icon=getattr(updated_menu, 'icon', None),
+            extra_icon=getattr(updated_menu, 'extra_icon', None),
+            enter_transition=getattr(updated_menu, 'enter_transition', None),
+            leave_transition=getattr(updated_menu, 'leave_transition', None),
+            active_path=getattr(updated_menu, 'active_path', None),
+            auths=getattr(updated_menu, 'auths', None),
+            frame_src=getattr(updated_menu, 'frame_src', None),
+            frame_loading=bool(getattr(updated_menu, 'frame_loading', False)),
+            keep_alive=bool(getattr(updated_menu, 'keep_alive', False)),
+            hidden_tag=bool(getattr(updated_menu, 'hidden_tag', False)),
+            fixed_tag=bool(getattr(updated_menu, 'fixed_tag', False)),
+            show_link=bool(getattr(updated_menu, 'show_link', True)),
+            show_parent=bool(getattr(updated_menu, 'show_parent', True)),
+            created_at=getattr(updated_menu, 'created_at', None),
+            updated_at=getattr(updated_menu, 'updated_at', None)
         )
         
         return BaseResponse(

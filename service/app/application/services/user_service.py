@@ -2,11 +2,11 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from domain.models.user import User
-from domain.repositories.user_repository import UserRepository
-from application.dto.user_dto import UserCreate, UserUpdate
+from app.domain.models.user import User
+from app.domain.repositories.user_repository import UserRepository
+from app.application.dto.user_dto import UserCreate, UserUpdate
 from shared.kernel.exceptions import BusinessException
-from infrastructure.auth.password_handler import PasswordHandler
+from app.infrastructure.auth.password_handler import PasswordHandler
 
 class UserService:
     """用户应用服务"""

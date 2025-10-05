@@ -1,10 +1,9 @@
 """
 菜单实体模块
 """
-from .menu import Menu, MenuPermission, MenuOperation
+from .menu import Menu, MenuMeta
 
 __all__ = [
     "Menu",
-    "MenuPermission",
-    "MenuOperation"
+    "MenuMeta"
 ]

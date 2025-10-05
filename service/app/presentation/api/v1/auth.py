@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
-from application.services.user_service import UserService
-from application.dto.user_dto import UserLogin
-from presentation.dto.response_dto import SuccessResponse, TokenResponse
-from presentation.api.dependencies import get_user_service, get_jwt_handler, get_password_handler
-from infrastructure.auth.jwt_handler import JWTHandler
-from infrastructure.auth.password_handler import PasswordHandler
+from app.application.services.user_service import UserService
+from app.application.dto.user_dto import UserLogin
+from app.presentation.dto.response_dto import SuccessResponse, TokenResponse
+from app.presentation.api.dependencies import get_user_service, get_jwt_handler, get_password_handler
+from app.infrastructure.auth.jwt_handler import JWTHandler
+from app.infrastructure.auth.password_handler import PasswordHandler
 from shared.kernel.exceptions import BusinessException
 
 router = APIRouter(prefix="/api/v1/auth", tags=["认证"])

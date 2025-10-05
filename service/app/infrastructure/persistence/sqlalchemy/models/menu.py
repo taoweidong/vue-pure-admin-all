@@ -1,6 +1,6 @@
 from sqlalchemy import Column, String, Integer, Text, ForeignKey, JSON
 from sqlalchemy.orm import relationship
-from infrastructure.persistence.sqlalchemy.models.base import BaseModel
+from app.infrastructure.persistence.sqlalchemy.models.base import BaseModel
 
 class MenuModel(BaseModel):
     """菜单数据库模型"""

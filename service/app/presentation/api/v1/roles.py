@@ -2,9 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List
 
 from app.application.services.role_service import RoleService
-from application.dto.role_dto import RoleCreate, RoleUpdate, RoleResponse, RoleAssignMenus
-from presentation.dto.response_dto import SuccessResponse, PageResponse
-from presentation.api.dependencies import get_role_service
+from app.application.dto.role_dto import RoleCreate, RoleUpdate, RoleResponse, RoleAssignMenus
+from app.presentation.dto.response_dto import SuccessResponse, PageResponse
+from app.presentation.api.dependencies import get_role_service
 from shared.kernel.exceptions import BusinessException
 
 router = APIRouter(prefix="/api/v1/roles", tags=["角色管理"])

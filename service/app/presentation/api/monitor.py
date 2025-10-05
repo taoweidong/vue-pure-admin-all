@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.infrastructure.database.database import get_db
-from app.presentation.api.auth import get_current_user
+from app.presentation.api.dependencies import get_current_user
 from app.presentation.schemas.user import TableResponse, PageResponse
 from app.application.services.system_service import SystemService
+from datetime import datetime
 
 router = APIRouter()
 
@@ -24,16 +25,19 @@ async def get_online_logs(
         
         user_list = []
         for online_user in online_users:
+            login_time = getattr(online_user, 'login_time', None)
+            last_access_time = getattr(online_user, 'last_access_time', None)
+            
             user_list.append({
-                "id": online_user.id,
-                "username": online_user.username,
-                "nickname": online_user.nickname,
-                "ip": online_user.ip,
-                "location": online_user.location or "未知",
-                "browser": online_user.browser or "未知",
-                "os": online_user.os or "未知",
-                "loginTime": int(online_user.login_time.timestamp() * 1000) if online_user.login_time else None,
-                "lastAccessTime": int(online_user.last_access_time.timestamp() * 1000) if online_user.last_access_time else None
+                "id": getattr(online_user, 'id', ''),
+                "username": getattr(online_user, 'username', ''),
+                "nickname": getattr(online_user, 'nickname', ''),
+                "ip": getattr(online_user, 'ip', ''),
+                "location": getattr(online_user, 'location', None) or "未知",
+                "browser": getattr(online_user, 'browser', None) or "未知",
+                "os": getattr(online_user, 'os', None) or "未知",
+                "loginTime": int(login_time.timestamp() * 1000) if login_time and isinstance(login_time, datetime) else None,
+                "lastAccessTime": int(last_access_time.timestamp() * 1000) if last_access_time and isinstance(last_access_time, datetime) else None
             })
         
         return TableResponse(
@@ -65,16 +69,18 @@ async def get_login_logs(
         
         log_list = []
         for log in logs:
+            login_time = getattr(log, 'login_time', None)
+            
             log_list.append({
-                "id": log.id,
-                "username": log.username,
-                "ip": log.ip,
-                "location": log.location or "未知",
-                "browser": log.browser or "未知",
-                "os": log.os or "未知",
-                "status": log.status,
-                "message": log.message or "",
-                "loginTime": int(log.login_time.timestamp() * 1000) if log.login_time else None
+                "id": getattr(log, 'id', ''),
+                "username": getattr(log, 'username', ''),
+                "ip": getattr(log, 'ip', ''),
+                "location": getattr(log, 'location', None) or "未知",
+                "browser": getattr(log, 'browser', None) or "未知",
+                "os": getattr(log, 'os', None) or "未知",
+                "status": getattr(log, 'status', 0),
+                "message": getattr(log, 'message', None) or "",
+                "loginTime": int(login_time.timestamp() * 1000) if login_time and isinstance(login_time, datetime) else None
             })
         
         return TableResponse(
@@ -106,19 +112,21 @@ async def get_operation_logs(
         
         log_list = []
         for log in logs:
+            operate_time = getattr(log, 'operate_time', None)
+            
             log_list.append({
-                "id": log.id,
-                "username": log.username or "系统",
-                "module": log.module or "",
-                "summary": log.summary or "",
-                "method": log.method or "",
-                "requestUrl": log.request_url or "",
-                "ip": log.ip or "",
-                "location": log.location or "未知",
-                "browser": log.browser or "未知",
-                "os": log.os or "未知",
-                "status": log.status,
-                "operateTime": int(log.operate_time.timestamp() * 1000) if log.operate_time else None
+                "id": getattr(log, 'id', ''),
+                "username": getattr(log, 'username', None) or "系统",
+                "module": getattr(log, 'module', None) or "",
+                "summary": getattr(log, 'summary', None) or "",
+                "method": getattr(log, 'method', None) or "",
+                "requestUrl": getattr(log, 'request_url', None) or "",
+                "ip": getattr(log, 'ip', None) or "",
+                "location": getattr(log, 'location', None) or "未知",
+                "browser": getattr(log, 'browser', None) or "未知",
+                "os": getattr(log, 'os', None) or "未知",
+                "status": getattr(log, 'status', 0),
+                "operateTime": int(operate_time.timestamp() * 1000) if operate_time and isinstance(operate_time, datetime) else None
             })
         
         return TableResponse(
@@ -150,14 +158,16 @@ async def get_system_logs(
         
         log_list = []
         for log in logs:
+            created_at = getattr(log, 'created_at', None)
+            
             log_list.append({
-                "id": log.id,
-                "level": log.level,
-                "module": log.module or "",
-                "message": log.message,
-                "ip": log.ip or "",
-                "userAgent": log.user_agent or "",
-                "createTime": int(log.created_at.timestamp() * 1000) if log.created_at else None
+                "id": getattr(log, 'id', ''),
+                "level": getattr(log, 'level', ''),
+                "module": getattr(log, 'module', None) or "",
+                "message": getattr(log, 'message', ''),
+                "ip": getattr(log, 'ip', None) or "",
+                "userAgent": getattr(log, 'user_agent', None) or "",
+                "createTime": int(created_at.timestamp() * 1000) if created_at and isinstance(created_at, datetime) else None
             })
         
         return TableResponse(
@@ -191,17 +201,19 @@ async def get_system_log_detail(
         if not log:
             raise HTTPException(status_code=404, detail="Log not found")
         
+        created_at = getattr(log, 'created_at', None)
+        
         return {
             "success": True,
             "data": {
-                "id": log.id,
-                "level": log.level,
-                "module": log.module or "",
-                "message": log.message,
-                "detail": log.detail or "",
-                "ip": log.ip or "",
-                "userAgent": log.user_agent or "",
-                "createTime": int(log.created_at.timestamp() * 1000) if log.created_at else None
+                "id": getattr(log, 'id', ''),
+                "level": getattr(log, 'level', ''),
+                "module": getattr(log, 'module', None) or "",
+                "message": getattr(log, 'message', ''),
+                "ip": getattr(log, 'ip', None) or "",
+                "userAgent": getattr(log, 'user_agent', None) or "",
+                "createTime": int(created_at.timestamp() * 1000) if created_at and isinstance(created_at, datetime) else None,
+                "details": getattr(log, 'details', None) or ""
             }
         }
     except Exception as e:

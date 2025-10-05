@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_, func, update, delete
 from sqlalchemy.orm import InstrumentedAttribute
 
-from domain.repositories.base_repository import BaseRepository
-from infrastructure.persistence.sqlalchemy.models.base import BaseModel
+from app.domain.repositories.base_repository import BaseRepository
+from app.infrastructure.persistence.sqlalchemy.models.base import BaseModel
 
 ModelType = TypeVar("ModelType", bound=BaseModel)
 

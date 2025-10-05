@@ -1,8 +1,12 @@
 import os
 import sqlite3
 from sqlalchemy.orm import Session
-from app.infrastructure.database.database import SessionLocal, engine
-from app.domain.entities.models import *
+from app.infrastructure.database.database import SessionLocal, engine, Base
+from app.domain.user.entities.user import User, UserRole, UserSession, UserProfile
+from app.domain.role.entities.role import Role, RoleMenu
+from app.domain.menu.entities.menu import Menu, MenuMeta
+from app.domain.organization.entities.department import Department
+from app.domain.audit.entities.log import LoginLog, OperationLog, SystemLog
 from app.infrastructure.utils.auth import AuthService
 from app.infrastructure.utils.logger import (
     log_file_not_found, log_sql_execution, log_sql_error, log_database_init,
@@ -10,6 +14,7 @@ from app.infrastructure.utils.logger import (
     log_database_exists, log_database_with_data, get_business_logger
 )
 from datetime import datetime
+import uuid
 
 
 def execute_sql_file(db_path: str, sql_file_path: str):
@@ -52,7 +57,7 @@ def init_database_with_sql():
         try:
             with sqlite3.connect(db_path) as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT COUNT(*) FROM users")
+                cursor.execute("SELECT COUNT(*) FROM system_userinfo")
                 user_count = cursor.fetchone()[0]
                 if user_count > 0:
                     log_database_with_data()
@@ -63,10 +68,10 @@ def init_database_with_sql():
     
     log_database_init()
     
-    # SQL文件路径
+    # SQL文件路径 - 使用适合SQLite的SQL文件
     sql_dir = os.path.join(db_dir, 'init')
     sql_files = [
-        '01_create_tables.sql',
+        '01_create_tables_sqlite.sql',  # 使用适合SQLite的SQL文件
         '02_insert_data.sql', 
         '03_create_indexes.sql'
     ]
@@ -95,8 +100,8 @@ def init_database_with_sql():
         
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            cursor.execute("UPDATE users SET password_hash = ? WHERE username = 'admin'", (admin_hash,))
-            cursor.execute("UPDATE users SET password_hash = ? WHERE username = 'common'", (common_hash,))
+            cursor.execute("UPDATE system_userinfo SET password = ? WHERE username = 'admin'", (admin_hash,))
+            cursor.execute("UPDATE system_userinfo SET password = ? WHERE username = 'common'", (common_hash,))
             conn.commit()
         
         log_password_update()
@@ -141,25 +146,27 @@ def init_database_with_sqlalchemy():
         
         # 创建部门
         dev_dept = Department(
-            id=103,
+            id=str(uuid.uuid4()).replace('-', ''),
+            mode_type=1,
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             name="研发部门",
             code="dev",
-            leader="张三",
-            phone="13800138000",
-            email="dev@example.com",
-            status=1,
-            sort=1
+            rank=1,
+            auto_bind=True,
+            is_active=True
         )
         
         test_dept = Department(
-            id=105,
+            id=str(uuid.uuid4()).replace('-', ''),
+            mode_type=1,
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             name="测试部门",
             code="test",
-            leader="李四",
-            phone="13800138001",
-            email="test@example.com",
-            status=1,
-            sort=2
+            rank=2,
+            auto_bind=True,
+            is_active=True
         )
         
         db.add(dev_dept)
@@ -168,19 +175,23 @@ def init_database_with_sqlalchemy():
         
         # 创建角色
         admin_role = Role(
-            id=1,
+            id=str(uuid.uuid4()).replace('-', ''),
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             name="超级管理员",
             code="admin",
-            status=1,
-            remark="超级管理员拥有最高权限"
+            is_active=True,
+            description="超级管理员拥有最高权限"
         )
         
         common_role = Role(
-            id=2,
+            id=str(uuid.uuid4()).replace('-', ''),
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             name="普通角色",
             code="common",
-            status=1,
-            remark="普通角色拥有部分权限"
+            is_active=True,
+            description="普通角色拥有部分权限"
         )
         
         db.add(admin_role)
@@ -189,33 +200,47 @@ def init_database_with_sqlalchemy():
         
         # 创建用户
         admin_user = User(
-            id=1,
+            id=str(uuid.uuid4()).replace('-', ''),
+            password=auth_service.get_password_hash("admin123"),
+            last_login=None,
+            is_superuser=True,
             username="admin",
+            first_name="",
+            last_name="",
+            is_staff=True,
+            is_active=True,
+            date_joined=datetime.now(),
+            mode_type=1,
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             nickname="小铭",
-            email="admin@example.com",
+            gender=1,
             phone="15888886789",
+            email="admin@example.com",
             avatar="https://avatars.githubusercontent.com/u/44761321",
-            password_hash=auth_service.get_password_hash("admin123"),
-            description="系统管理员",
-            sex=1,
-            status=1,
-            dept_id=103,
-            remark="管理员账户"
+            description="系统管理员"
         )
         
         common_user = User(
-            id=2,
+            id=str(uuid.uuid4()).replace('-', ''),
+            password=auth_service.get_password_hash("common123"),
+            last_login=None,
+            is_superuser=False,
             username="common",
+            first_name="",
+            last_name="",
+            is_staff=True,
+            is_active=True,
+            date_joined=datetime.now(),
+            mode_type=1,
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
             nickname="小林",
-            email="common@example.com",
+            gender=2,
             phone="18288882345",
+            email="common@example.com",
             avatar="https://avatars.githubusercontent.com/u/52823142",
-            password_hash=auth_service.get_password_hash("common123"),
-            description="普通用户",
-            sex=2,
-            status=1,
-            dept_id=105,
-            remark="普通用户账户"
+            description="普通用户"
         )
         
         db.add(admin_user)
@@ -223,64 +248,161 @@ def init_database_with_sqlalchemy():
         db.flush()
         
         # 创建用户角色关联
-        admin_user_role = UserRole(user_id=1, role_id=1)
-        common_user_role = UserRole(user_id=2, role_id=2)
+        admin_user_role = UserRole(
+            userinfo_id=admin_user.id,
+            userrole_id=admin_role.id
+        )
+        
+        common_user_role = UserRole(
+            userinfo_id=common_user.id,
+            userrole_id=common_role.id
+        )
         
         db.add(admin_user_role)
         db.add(common_user_role)
         
-        # 创建菜单（保持与之前相同的菜单结构）
-        menus = [
-            # 外部页面
-            Menu(id=100, parent_id=0, title="menus.pureExternalPage", name="PureIframe", path="/iframe", menu_type=0, rank=7, icon="ri:links-fill", show_link=True),
-            Menu(id=101, parent_id=100, title="menus.pureExternalDoc", name="PureIframeExternal", path="/iframe/external", menu_type=0, show_link=True),
-            Menu(id=102, parent_id=101, title="menus.pureExternalLink", name="https://pure-admin.cn/", path="/external", menu_type=2, show_link=True),
-            Menu(id=103, parent_id=101, title="menus.pureUtilsLink", name="https://pure-admin-utils.netlify.app/", path="/pureUtilsLink", menu_type=2, show_link=True),
-            Menu(id=104, parent_id=100, title="menus.pureEmbeddedDoc", name="PureIframeEmbedded", path="/iframe/embedded", menu_type=1, show_link=True),
-            Menu(id=105, parent_id=104, title="menus.pureEpDoc", name="FrameEp", path="/iframe/ep", menu_type=1, frame_src="https://element-plus.org/zh-CN/", keep_alive=True, show_link=True),
-            
-            # 权限管理
-            Menu(id=200, parent_id=0, title="menus.purePermission", name="PurePermission", path="/permission", menu_type=0, rank=9, icon="ep:lollipop", show_link=True),
-            Menu(id=201, parent_id=200, title="menus.purePermissionPage", name="PermissionPage", path="/permission/page/index", menu_type=0, show_link=True),
-            Menu(id=202, parent_id=200, title="menus.purePermissionButton", name="PermissionButton", path="/permission/button", menu_type=0, show_link=True),
-            Menu(id=203, parent_id=202, title="添加", name="", path="", menu_type=3, auths="permission:btn:add", show_link=True),
-            Menu(id=204, parent_id=202, title="修改", name="", path="", menu_type=3, auths="permission:btn:edit", show_link=True),
-            Menu(id=205, parent_id=202, title="删除", name="", path="", menu_type=3, auths="permission:btn:delete", show_link=True),
-            
+        # 创建菜单元数据
+        menu_meta = MenuMeta(
+            id=str(uuid.uuid4()).replace('-', ''),
+            created_time=datetime.now(),
+            updated_time=datetime.now(),
+            title="系统管理",
+            icon="ri:settings-3-line",
+            is_show_menu=True,
+            is_show_parent=True,
+            is_keepalive=True,
+            frame_loading=True,
+            is_hidden_tag=False,
+            fixed_tag=False,
+            dynamic_level=1
+        )
+        
+        db.add(menu_meta)
+        db.flush()
+        
+        # 创建菜单
+        menus_data = [
             # 系统管理
-            Menu(id=300, parent_id=0, title="menus.pureSysManagement", name="PureSystem", path="/system", menu_type=0, rank=10, icon="ri:settings-3-line", show_link=True),
-            Menu(id=301, parent_id=300, title="menus.pureUser", name="SystemUser", path="/system/user/index", menu_type=0, icon="ri:admin-line", show_link=True),
-            Menu(id=302, parent_id=300, title="menus.pureRole", name="SystemRole", path="/system/role/index", menu_type=0, icon="ri:admin-fill", show_link=True),
-            Menu(id=303, parent_id=300, title="menus.pureSystemMenu", name="SystemMenu", path="/system/menu/index", menu_type=0, icon="ep:menu", show_link=True),
-            Menu(id=304, parent_id=300, title="menus.pureDept", name="SystemDept", path="/system/dept/index", menu_type=0, icon="ri:git-branch-line", show_link=True),
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "PureSystem",
+                "path": "/system",
+                "menu_type": 0,  # 目录
+                "rank": 10,
+                "is_active": True,
+                "meta_id": menu_meta.id
+            },
+            
+            # 用户管理
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "SystemUser",
+                "path": "/system/user/index",
+                "menu_type": 1,  # 菜单
+                "rank": 1,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
+            
+            # 角色管理
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "SystemRole",
+                "path": "/system/role/index",
+                "menu_type": 1,  # 菜单
+                "rank": 2,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
+            
+            # 部门管理
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "SystemDept",
+                "path": "/system/dept/index",
+                "menu_type": 1,  # 菜单
+                "rank": 3,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
+            
+            # 菜单管理
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "SystemMenu",
+                "path": "/system/menu/index",
+                "menu_type": 1,  # 菜单
+                "rank": 4,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
             
             # 系统监控
-            Menu(id=400, parent_id=0, title="menus.pureSysMonitor", name="PureMonitor", path="/monitor", menu_type=0, rank=11, icon="ep:monitor", show_link=True),
-            Menu(id=401, parent_id=400, title="menus.pureOnlineUser", name="OnlineUser", path="/monitor/online-user", menu_type=0, icon="ri:user-voice-line", show_link=True),
-            Menu(id=402, parent_id=400, title="menus.pureLoginLog", name="LoginLog", path="/monitor/login-logs", menu_type=0, icon="ri:window-line", show_link=True),
-            Menu(id=403, parent_id=400, title="menus.pureOperationLog", name="OperationLog", path="/monitor/operation-logs", menu_type=0, icon="ri:history-fill", show_link=True),
-            Menu(id=404, parent_id=400, title="menus.pureSystemLog", name="SystemLog", path="/monitor/system-logs", menu_type=0, icon="ri:file-search-line", show_link=True),
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "PureMonitor",
+                "path": "/monitor",
+                "menu_type": 0,  # 目录
+                "rank": 11,
+                "is_active": True,
+                "meta_id": menu_meta.id
+            },
             
-            # 标签页操作
-            Menu(id=500, parent_id=0, title="menus.pureTabs", name="PureTabs", path="/tabs", menu_type=0, rank=12, icon="ri:bookmark-2-line", show_link=True),
-            Menu(id=501, parent_id=500, title="menus.pureTabs", name="Tabs", path="/tabs/index", menu_type=0, show_link=True),
+            # 登录日志
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "LoginLog",
+                "path": "/monitor/login-logs",
+                "menu_type": 1,  # 菜单
+                "rank": 1,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
+            
+            # 操作日志
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "OperationLog",
+                "path": "/monitor/operation-logs",
+                "menu_type": 1,  # 菜单
+                "rank": 2,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            },
+            
+            # 系统日志
+            {
+                "id": str(uuid.uuid4()).replace('-', ''),
+                "name": "SystemLog",
+                "path": "/monitor/system-logs",
+                "menu_type": 1,  # 菜单
+                "rank": 3,
+                "is_active": True,
+                "parent_id": None,
+                "meta_id": menu_meta.id
+            }
         ]
         
-        for menu in menus:
+        menu_objects = []
+        for menu_data in menus_data:
+            menu = Menu(**menu_data)
+            menu_objects.append(menu)
             db.add(menu)
         
         db.flush()
         
         # 创建角色菜单关联 - 管理员拥有所有权限
-        admin_menu_ids = [100, 101, 102, 103, 104, 105, 200, 201, 202, 203, 204, 205, 300, 301, 302, 303, 304, 400, 401, 402, 403, 404, 500, 501]
-        for menu_id in admin_menu_ids:
-            role_menu = RoleMenu(role_id=1, menu_id=menu_id)
-            db.add(role_menu)
-        
-        # 普通用户权限
-        common_menu_ids = [100, 101, 102, 103, 104, 105, 200, 201, 404, 500, 501]
-        for menu_id in common_menu_ids:
-            role_menu = RoleMenu(role_id=2, menu_id=menu_id)
+        for menu in menu_objects:
+            role_menu = RoleMenu(
+                userrole_id=admin_role.id,
+                menu_id=menu.id
+            )
             db.add(role_menu)
         
         db.commit()

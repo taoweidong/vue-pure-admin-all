@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from domain.repositories.base_repository import BaseRepository
-from domain.models.dept import Department
+from app.domain.repositories.base_repository import BaseRepository
+from app.domain.models.dept import Department
 
 class DeptRepository(BaseRepository[Department], ABC):
     """部门仓储接口"""

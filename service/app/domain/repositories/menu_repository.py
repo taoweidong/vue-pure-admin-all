@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Optional, List
-from domain.repositories.base_repository import BaseRepository
-from domain.models.menu import Menu
+from app.domain.repositories.base_repository import BaseRepository
+from app.domain.models.menu import Menu
 
 class MenuRepository(BaseRepository[Menu], ABC):
     """菜单仓储接口"""

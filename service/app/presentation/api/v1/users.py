@@ -1,118 +1,226 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from typing import List, Optional
+from sqlalchemy.orm import Session
+from datetime import datetime
 
-from app.application.services.user_service import UserService
-from application.dto.user_dto import UserCreate, UserUpdate, UserResponse, UserAssignRoles
-from presentation.dto.response_dto import SuccessResponse, PageResponse
-from presentation.api.dependencies import get_user_service
-from shared.kernel.exceptions import BusinessException
+from app.infrastructure.database.database import get_db
+from app.domain.user.entities.user import User
+from app.presentation.api.dependencies import get_current_user
+from app.presentation.schemas.common import BaseResponse, PaginatedResponse, PaginationData
 
 router = APIRouter(prefix="/api/v1/users", tags=["用户管理"])
 
-@router.get("", response_model=PageResponse[UserResponse])
+
+@router.get("", response_model=PaginatedResponse)
 async def list_users(
-    skip: int = Query(0, ge=0),
-    limit: int = Query(100, ge=1, le=1000),
-    user_service: UserService = Depends(get_user_service),
+    page: int = Query(1, ge=1, description="页码"),
+    page_size: int = Query(10, ge=1, le=100, description="每页记录数"),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """获取用户列表"""
-    users = await user_service.list_users(skip=skip, limit=limit)
-    total = await user_service.count_users()
-    
-    # 转换为响应DTO
-    user_responses = [UserResponse.from_domain(user) for user in users]
-    
-    return PageResponse(
-        data=user_responses,
-        total=total,
-        skip=skip,
-        limit=limit
-    )
+    try:
+        # 查询用户列表
+        query = db.query(User)
+        total = query.count()
+        users = query.offset((page - 1) * page_size).limit(page_size).all()
+        
+        user_list = []
+        for user in users:
+            user_list.append({
+                "id": user.id,
+                "username": user.username,
+                "nickname": user.nickname,
+                "email": user.email,
+                "phone": user.phone,
+                "is_active": user.is_active,
+                "created_time": user.created_time.isoformat() if user.created_time is not None else None,
+                "updated_time": user.updated_time.isoformat() if user.updated_time is not None else None
+            })
+        
+        pages = (total + page_size - 1) // page_size
+        pagination_data = PaginationData(
+            items=user_list,
+            total=total,
+            page=page,
+            page_size=page_size,
+            pages=pages
+        )
+        
+        return PaginatedResponse(
+            success=True,
+            data=pagination_data
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.get("/{user_id}", response_model=SuccessResponse[UserResponse])
+
+@router.get("/{user_id}", response_model=BaseResponse)
 async def get_user(
     user_id: str,
-    user_service: UserService = Depends(get_user_service),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """获取用户详情"""
-    user = await user_service.get_user(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
-    return SuccessResponse(data=UserResponse.from_domain(user))
-
-@router.post("", response_model=SuccessResponse[UserResponse])
-async def create_user(
-    user_in: UserCreate,
-    user_service: UserService = Depends(get_user_service),
-):
-    """创建用户"""
     try:
-        user = await user_service.create_user(user_in)
-        return SuccessResponse(
-            data=UserResponse.from_domain(user),
-            message="用户创建成功"
-        )
-    except BusinessException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
-
-@router.put("/{user_id}", response_model=SuccessResponse[UserResponse])
-async def update_user(
-    user_id: str,
-    user_update: UserUpdate,
-    user_service: UserService = Depends(get_user_service),
-):
-    """更新用户"""
-    try:
-        user = await user_service.update_user(user_id, user_update)
+        user = db.query(User).filter(User.id == user_id).first()
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="用户不存在"
             )
-        return SuccessResponse(
-            data=UserResponse.from_domain(user),
-            message="用户更新成功"
+        
+        user_detail = {
+            "id": user.id,
+            "username": user.username,
+            "nickname": user.nickname,
+            "email": user.email,
+            "phone": user.phone,
+            "is_active": user.is_active,
+            "gender": user.gender,
+            "avatar": user.avatar,
+            "description": user.description,
+            "created_time": user.created_time.isoformat() if user.created_time is not None else None,
+            "updated_time": user.updated_time.isoformat() if user.updated_time is not None else None
+        }
+        
+        return BaseResponse(
+            success=True,
+            data=user_detail
         )
-    except BusinessException as e:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/{user_id}", response_model=SuccessResponse[None])
+
+@router.post("", response_model=BaseResponse, status_code=status.HTTP_201_CREATED)
+async def create_user(
+    user_data: dict,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """创建用户"""
+    try:
+        # 检查用户名是否已存在
+        existing_user = db.query(User).filter(User.username == user_data.get("username")).first()
+        if existing_user:
+            raise HTTPException(status_code=409, detail="用户名已存在")
+        
+        # 创建新用户
+        new_user = User(
+            username=user_data.get("username"),
+            nickname=user_data.get("nickname", ""),
+            email=user_data.get("email", ""),
+            phone=user_data.get("phone", ""),
+            gender=user_data.get("gender", 0),
+            avatar=user_data.get("avatar", ""),
+            description=user_data.get("description", ""),
+            is_active=user_data.get("is_active", True),
+            # 其他必要字段需要根据实际情况设置
+        )
+        
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        
+        user_detail = {
+            "id": new_user.id,
+            "username": new_user.username,
+            "nickname": new_user.nickname,
+            "email": new_user.email,
+            "phone": new_user.phone,
+            "is_active": new_user.is_active,
+            "gender": new_user.gender,
+            "avatar": new_user.avatar,
+            "description": new_user.description,
+            "created_time": new_user.created_time.isoformat() if new_user.created_time is not None else None,
+            "updated_time": new_user.updated_time.isoformat() if new_user.updated_time is not None else None
+        }
+        
+        return BaseResponse(
+            success=True,
+            message="用户创建成功",
+            data=user_detail
+        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{user_id}", response_model=BaseResponse)
+async def update_user(
+    user_id: str,
+    user_data: dict,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """更新用户"""
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="用户不存在"
+            )
+        
+        # 更新用户信息
+        for key, value in user_data.items():
+            if hasattr(user, key) and key not in ["id", "created_time"]:
+                setattr(user, key, value)
+        
+        db.commit()
+        db.refresh(user)
+        
+        user_detail = {
+            "id": user.id,
+            "username": user.username,
+            "nickname": user.nickname,
+            "email": user.email,
+            "phone": user.phone,
+            "is_active": user.is_active,
+            "gender": user.gender,
+            "avatar": user.avatar,
+            "description": user.description,
+            "created_time": user.created_time.isoformat() if user.created_time is not None else None,
+            "updated_time": user.updated_time.isoformat() if user.updated_time is not None else None
+        }
+        
+        return BaseResponse(
+            success=True,
+            message="用户更新成功",
+            data=user_detail
+        )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user(
     user_id: str,
-    user_service: UserService = Depends(get_user_service),
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
 ):
     """删除用户"""
-    success = await user_service.delete_user(user_id)
-    if not success:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
-    return SuccessResponse(message="用户删除成功")
-
-@router.put("/{user_id}/roles", response_model=SuccessResponse[None])
-async def assign_user_roles(
-    user_id: str,
-    role_data: UserAssignRoles,
-    user_service: UserService = Depends(get_user_service),
-):
-    """分配用户角色"""
-    user = await user_service.get_user(user_id)
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="用户不存在"
-        )
-    
-    # 这里需要实现角色分配逻辑
-    # 简化实现
-    return SuccessResponse(message="角色分配成功")
+    try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="用户不存在"
+            )
+        
+        db.delete(user)
+        db.commit()
+        
+        return None
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))

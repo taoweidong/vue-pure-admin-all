@@ -2,10 +2,10 @@ from typing import List, Optional
 import uuid
 from datetime import datetime
 
-from domain.models.role import Role
-from domain.repositories.role_repository import RoleRepository
-from domain.repositories.menu_repository import MenuRepository
-from application.dto.role_dto import RoleCreate, RoleUpdate
+from app.domain.models.role import Role
+from app.domain.repositories.role_repository import RoleRepository
+from app.domain.repositories.menu_repository import MenuRepository
+from app.application.dto.role_dto import RoleCreate, RoleUpdate
 from shared.kernel.exceptions import BusinessException
 
 class RoleService:

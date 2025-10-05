@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 
 from loguru import logger
 from shared.kernel.config import get_settings
-# from app.presentation.api.v1 import users, roles, auth  # 暂时注释
+from app.presentation.api import router as api_router
 from app.infrastructure.persistence.sqlalchemy.database import create_tables
 import uvicorn
 
@@ -67,10 +67,8 @@ def create_app() -> FastAPI:
         allowed_hosts=["*"]  # 生产环境应该配置具体的域名
     )
 
-    # 注册 API 路由（暂时注释以便测试基本结构）
-    # app.include_router(auth.router, tags=["认证"])
-    # app.include_router(users.router, tags=["用户管理"])
-    # app.include_router(roles.router, tags=["角色管理"])
+    # 注册 API 路由
+    app.include_router(api_router)
 
     @app.get("/", tags=["根路径"])
     async def root():

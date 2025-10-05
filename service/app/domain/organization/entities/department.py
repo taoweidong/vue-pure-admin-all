@@ -1,45 +1,37 @@
 """
-部门/组织架构领域实体
-"""
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, Text, ForeignKey, JSON
+部门/组织架构领域实体"""
+from sqlalchemy import Column, String, DateTime, Boolean, Text, ForeignKey, Integer, SmallInteger
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.infrastructure.database.database import Base
+from sqlalchemy.dialects.mysql import JSON
 
 
 class Department(Base):
     """部门实体"""
-    __tablename__ = "departments"
+    __tablename__ = "system_deptinfo"
 
-    id = Column(Integer, primary_key=True, index=True)
-    parent_id = Column(Integer, ForeignKey("departments.id"), default=0, comment="父部门ID")
-    name = Column(String(100), nullable=False, comment="部门名称")
-    code = Column(String(50), unique=True, nullable=False, comment="部门编码")
-    full_name = Column(String(255), nullable=True, comment="部门全称")
-    type = Column(String(20), default="department", comment="类型 company|department|team|group")
-    level = Column(Integer, default=1, comment="层级")
-    path = Column(String(500), nullable=True, comment="路径，用/分隔")
-    leader_id = Column(Integer, ForeignKey("users.id"), nullable=True, comment="负责人ID")
-    leader = Column(String(50), nullable=True, comment="负责人姓名")
-    phone = Column(String(20), nullable=True, comment="联系电话")
-    email = Column(String(100), nullable=True, comment="邮箱")
-    address = Column(String(255), nullable=True, comment="办公地址")
-    description = Column(Text, nullable=True, comment="部门描述")
-    function_desc = Column(Text, nullable=True, comment="职能描述")
-    cost_center = Column(String(50), nullable=True, comment="成本中心")
-    budget_limit = Column(Integer, nullable=True, comment="预算限额")
-    employee_limit = Column(Integer, nullable=True, comment="人员限制")
-    status = Column(Integer, default=1, comment="状态 1-启用 0-禁用")
-    sort = Column(Integer, default=0, comment="排序")
-    extra_info = Column(JSON, nullable=True, comment="扩展信息")
-    created_at = Column(DateTime(timezone=True), server_default=func.now(), comment="创建时间")
-    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), comment="更新时间")
+    mode_type = Column(SmallInteger, nullable=False, comment="模式类型")
+    id = Column(String(32), primary_key=True, comment="部门ID")
+    created_time = Column(DateTime(timezone=True), nullable=False, comment="创建时间")
+    updated_time = Column(DateTime(timezone=True), nullable=False, comment="更新时间")
+    description = Column(Text, nullable=True, comment="描述")
+    name = Column(String(128), nullable=False, comment="部门名称")
+    code = Column(String(128), unique=True, nullable=False, comment="部门编码")
+    rank = Column(Integer, nullable=False, comment="排序")
+    auto_bind = Column(Boolean, nullable=False, comment="自动绑定")
+    is_active = Column(Boolean, nullable=False, comment="是否激活")
+    creator_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="创建者ID")
+    dept_belong_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="所属部门ID")
+    modifier_id = Column(String(32), ForeignKey("system_userinfo.id"), nullable=True, comment="修改者ID")
+    parent_id = Column(String(32), ForeignKey("system_deptinfo.id"), nullable=True, comment="父部门ID")
 
     # 关系
-    children = relationship("Department", backref="parent", remote_side=[id])
-    users = relationship("User", back_populates="dept", foreign_keys="User.dept_id")
-    leader_user = relationship("User", foreign_keys=[leader_id])
-    positions = relationship("Position", back_populates="department")
+    parent = relationship("Department", foreign_keys=[parent_id], remote_side=[id], back_populates="children")
+    children = relationship("Department", foreign_keys=[parent_id], back_populates="parent")
+    users = relationship("User", foreign_keys="User.dept_id", back_populates="dept")
+    creator = relationship("User", foreign_keys=[creator_id], remote_side="User.id")
+    modifier = relationship("User", foreign_keys=[modifier_id], remote_side="User.id")
 
 
 class Position(Base):

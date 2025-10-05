@@ -2,7 +2,7 @@ from typing import List, Optional, TYPE_CHECKING
 from pydantic import BaseModel
 
 if TYPE_CHECKING:
-    from domain.models.menu import Menu
+    from app.domain.models.menu import Menu
 
 class Role(BaseModel):
     """角色领域模型"""
@@ -50,4 +50,3 @@ class FieldPermission(BaseModel):
     permission_type: str  # read, write, hide
 
 # 模型重建将在模块导入完成后进行
-# 避免循环导入问题

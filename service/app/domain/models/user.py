@@ -3,7 +3,7 @@ from pydantic import BaseModel, EmailStr
 from datetime import datetime
 
 if TYPE_CHECKING:
-    from domain.models.role import Role
+    from app.domain.models.role import Role
 
 class User(BaseModel):
     """用户领域模型"""
